@@ -37,7 +37,7 @@ public class Server {
 			HttpServer server = HttpServer.create(new InetSocketAddress(PORT_NUMBER), 0);
 			
 			// Set request handler and name space.
-			server.createContext("/factorize", new requestHandler());
+			server.createContext("/compute", new requestHandler());
 			
 			// Use a thread pools for multithreading.
 			server.setExecutor(Executors.newFixedThreadPool(THREADS_COUNT)); 
@@ -50,21 +50,12 @@ public class Server {
 			e.printStackTrace();
 		}
 	}
-	
-	static String convertStreamToString(java.io.InputStream inputStream) {
-		// Convert a stream object to a string object.
-		java.util.Scanner s = new java.util.Scanner(inputStream);
-		s.useDelimiter("\\A");
-	    String str = s.hasNext() ? s.next() : ""; 
-	    s.close();
-	    return str;
-	}
 
 	public static class requestHandler implements HttpHandler {
 		
-		public String compute(String query) {
+		public String compute(String input, int difficulty) {
 			// Get cached answer. 
-			String cachedAnswer = CACHE_ANSWERS ? CACHE.get(query) : null;
+			String cachedAnswer = CACHE_ANSWERS ? CACHE.get(input) : null;
 			
 			// If answer is cached, return it immediately.
 			if (cachedAnswer!=null) 
@@ -72,7 +63,7 @@ public class Server {
 			// Else compute it.
 			else {
 				// Delegate computation.
-				List<String> factors = Factorizer.factorize(new BigInteger(query));
+				List<String> factors = Factorizer.factorize(new BigInteger(input));
 				String result = String.join(" ", factors);
 				
 				// Simulate fake delay in processing.
@@ -83,39 +74,46 @@ public class Server {
 				}
 				
 				// Store result in cache.
-				CACHE.put(query, result);
+				CACHE.put(input, result);
 				
 				// Return result as string.
 				return result;
 			}
 		}
 		
-		public void handle(HttpExchange exchange) throws IOException {
-			// Start recording processing time.
-			long startTime = System.currentTimeMillis();
+		public void handle(HttpExchange exchange) {
+			try {
+				// Start recording processing time.
+				long startTime = System.currentTimeMillis();
+				
+				// Get request difficulty and request data.
+				InputStream inputStream = exchange.getRequestBody();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 			
-			// Get request data.
-			InputStream inputStream = exchange.getRequestBody();
-			String body = convertStreamToString(inputStream);
-			
-			// Print thread debug information.
-			String threadName = Thread.currentThread().getName();
-			System.out.format("Request for %s processed by %s.\n", body, threadName);
-		
-			// Compute
-			String computationResult = compute(body);
+				int difficulty = Integer.parseInt(reader.readLine());
+				String input = "";
+				for (String line = reader.readLine(); line != null; line = reader.readLine())
+					input+=line;
+				
+				// Print thread debug information.
+				String threadName = Thread.currentThread().getName();
+				System.out.format("Request for %s (Difficulty %d) processed by %s.\n", input, difficulty, threadName);
+				
+				// Compute
+				String computationResult = compute(input, difficulty);
 
-			// Prepare response
-			long timeElapsed = System.currentTimeMillis() - startTime;
-			String response = Long.toString(timeElapsed) + " ms\n" + computationResult;
-			
-			// Send response
-			exchange.sendResponseHeaders(200, response.length());
-			OutputStream outputStream = exchange.getResponseBody();
-			outputStream.write(response.getBytes());
-			
-			// Close stream
-			outputStream.close();
+				// Prepare response
+				long timeElapsed = System.currentTimeMillis() - startTime;
+				String response = Long.toString(timeElapsed) + "\n" + computationResult;
+				
+				// Send response
+				exchange.sendResponseHeaders(200, response.length());
+				OutputStream outputStream = exchange.getResponseBody();
+				outputStream.write(response.getBytes());
+				
+				// Close stream
+				outputStream.close();
+			} catch (NumberFormatException | IOException e) {e.printStackTrace();}	
        }
     }
 }
