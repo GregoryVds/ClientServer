@@ -1,7 +1,5 @@
 package perf;
 
-
-
 public class SquareMatrix {
 	private double coefficients[][];
 	
@@ -15,7 +13,7 @@ public class SquareMatrix {
 		
 		SquareMatrix tmp = this.MultiplicationSquareMatrix(this);
 		for(double i=0; i<power-2; i++){
-			tmp=  tmp.MultiplicationSquareMatrix(this);
+			tmp= tmp.MultiplicationSquareMatrix(this);
 		}
 		return tmp;
 	}
@@ -50,25 +48,72 @@ public class SquareMatrix {
 	
 	public String toString(){
 		double[][] coef = this.getCoefficients();
-		int rank = coef.length;
-		String str = "rank :"+rank +"\n";
+		String str="";
+		int rank= coef.length;
 		for(int i=0;i<rank; i++){
-			str += "(";
 			for(int j=0; j<rank;j++){
-				str += " "+ coef[i][j];
+				if(j!=rank-1)
+					str += coef[i][j] + ",";
+				else
+					str += coef[i][j];
+				
 			}
-			str +=") \n";
+			if(i!=rank-1)
+				str +=";";
+				
 		}
 		return str;
 	}
 	
-	public static void main (String args[]){
+	public static SquareMatrix StringConvertToMatrix(String stringMatrix){
+		String[] rows = stringMatrix.split(";");
+		SquareMatrix matrix = new SquareMatrix(rows.length);
+		double [][] coeficients = new double[rows.length][rows.length];
+		
+		for(int i=0; i<rows.length;i++){
+			String[] coefinRow = rows[i].split(",");
+			for(int j=0; j< coefinRow.length; j++){
+				coeficients[i][j] = Double.parseDouble(coefinRow[j]);
+			}
+		}
+		matrix.setCoefficients(coeficients);
+		return matrix;
+		
+	}
+	
+	
+	/*
+	 * @pre : 	data must be in this form : a,b,c,d;e,f,g,h;i,j,k,l;m,n,o,p/t
+	 * 			where 	; represent row of matrix
+	 * 					a to p the coeficient of matrix
+	 * 					/t power of matrix
+	 * 					the matrix must be square
+	 */
+	public static String powerMatrix(String data){
+		String[] datas = data.split("/");
+		SquareMatrix matrixA = StringConvertToMatrix(datas[0]);
+		SquareMatrix resultat = matrixA.pow(Double.parseDouble(datas[1]));
+		return resultat.toString();
+	}
+	
+	/*public static void main (String args[]){
 		SquareMatrix A = new SquareMatrix(2);
-		double [][] coefA = { {0,2,4,4},{1,3,4,6},{1,2,6,9},{1,3,4,6} };
+		double [][] coefA = { {0,2,4,4},{1,3,4,6},{1,2,6,9},{1,3,4,6}};
 		A.setCoefficients(coefA);
 		SquareMatrix C = A.pow(40);
 		String resultat = C.toString();
 		System.out.println(resultat);
-	}
+		
+		String stringMatrix = "0,2,4,4;1,3,4,6;1,2,6,9;1,3,4,6";
+		SquareMatrix B = StringConvertToMatrix(stringMatrix);
+		String resultatB = B.toString();
+		System.out.println(resultatB);
+		
+		SquareMatrix C = B.pow(2);
+		String resultatC = C.toString();
+		System.out.println(resultatC);
+		String data = "0,2,4,4;1,3,4,6;1,2,6,9;1,3,4,6/6";
+		System.out.println(powerMatrix(data));
+	}*/
 	
 }
