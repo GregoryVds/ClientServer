@@ -5,9 +5,7 @@ import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.io.*;
 import com.sun.net.httpserver.*;
-import java.math.BigInteger;
 import java.util.HashMap;
-import java.util.List;
 
 public class Server {
 	static int PORT_NUMBER 		 = 3000;
@@ -52,30 +50,21 @@ public class Server {
 	}
 
 	public static class requestHandler implements HttpHandler {
-		
+				
 		public String compute(String input, int difficulty) {
+			Computation comp = new Computation(input, difficulty, DELAY_MS);
+			
 			// Get cached answer. 
-			String cachedAnswer = CACHE_ANSWERS ? CACHE.get(input) : null;
+			String cachedAnswer = CACHE_ANSWERS ? CACHE.get(comp.cacheKey()) : null;
 			
 			// If answer is cached, return it immediately.
 			if (cachedAnswer!=null) 
 				return cachedAnswer;
 			// Else compute it.
-			else {
-				// Delegate computation.
-				List<String> factors = Factorizer.factorize(new BigInteger(input));
-				String result = String.join(" ", factors);
-				
-				// Simulate fake delay in processing.
-				try {
-					Thread.sleep(DELAY_MS);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				
+			else { 
+				String result = comp.compute();
 				// Store result in cache.
-				CACHE.put(input, result);
-				
+				CACHE.put(comp.cacheKey(), result);
 				// Return result as string.
 				return result;
 			}
@@ -86,10 +75,8 @@ public class Server {
 				// Start recording processing time.
 				long startTime = System.currentTimeMillis();
 				
-				// Get request difficulty and request data.
-				InputStream inputStream = exchange.getRequestBody();
-				BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-			
+				// Read request difficulty and data.
+				BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
 				int difficulty = Integer.parseInt(reader.readLine());
 				String input = "";
 				for (String line = reader.readLine(); line != null; line = reader.readLine())
