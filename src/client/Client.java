@@ -7,7 +7,7 @@ import lib.Lib;
 import java.io.*;
 
 public class Client {
-	static String URL     		= "http://localhost:3000/compute";
+	static String URL     		= "http://localhost:3000";
 	static int DIFFICULTY  		= 1;
 	static String INPUT_FILE 	= "input.txt";
 	
@@ -38,8 +38,10 @@ public class Client {
 		long startTime = System.currentTimeMillis();
 		
 		// Open HTTP connection.
-		HttpURLConnection con = getConnection();
-			
+		HttpURLConnection con = getConnection(URL + "/compute");
+		con.setDoOutput(true);
+		con.setDoInput(true);
+		
 		// Send data.
 		con.setRequestProperty("Content-Length", Integer.toString(postData.length));
 		new DataOutputStream(con.getOutputStream()).write(postData);
@@ -47,7 +49,6 @@ public class Client {
 		// Read response.
 		BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
 		int computationTime = Integer.parseInt(reader.readLine());
-		float cpusUsage = Float.parseFloat(reader.readLine());
 		String result = "";
 		for (String line = reader.readLine(); line != null; line = reader.readLine())
 			result+=line;
@@ -58,20 +59,42 @@ public class Client {
 		long networkTime = timeElapsed - computationTime;
 			
 		// Return computation result
-		return new ComputationResult(difficulty, result, networkTime, computationTime, cpusUsage);
+		return new ComputationResult(difficulty, result, networkTime, computationTime);
 	}
 	
+	public void issueStartRecordingRequest() throws Exception {
+		// Open HTTP connection.
+		System.out.println("Issuing new recording");
+		HttpURLConnection con = getConnection(URL + "/start_recording");
+		int code = con.getResponseCode();
+		if (code!=200) 
+			throw new Exception("Did not start recording");
+		con.disconnect();
+	}
+	
+	public RecordingResult issueStopRecordingRequest() throws Exception {
+		// Open HTTP connection.
+		HttpURLConnection con = getConnection(URL + "/stop_recording");	
+		con.setDoInput(true);
+		
+		// Read response.
+		BufferedReader reader 	= new BufferedReader(new InputStreamReader(con.getInputStream()));
+		float cpusUsage 		= Float.parseFloat(reader.readLine());
+		float networkUsage 		= Float.parseFloat(reader.readLine());		
+		
+		con.disconnect();
+		return new RecordingResult(cpusUsage, networkUsage);
+	}
+		
 	// Build request body as a string.
 	public String buildRequestBody(String body, int difficulty) {
 		return Integer.toString(difficulty)+'\n'+body;
 	}
 	
 	// Open the HTTP connection for a POST request.
-	public HttpURLConnection getConnection() throws Exception {
-		URL url = new URL(URL);
+	public HttpURLConnection getConnection(String _url) throws Exception {
+		URL url = new URL(_url);
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
-		con.setDoOutput(true);
-		con.setDoInput(true);
 		con.setRequestMethod("POST");
 		return con;
 	}

@@ -15,8 +15,12 @@ public class Server {
 	static int THREADS_COUNT 	 = 1;
 	static int DELAY_MS     	 = 500;	
 	static boolean CACHE_ANSWERS = false;
-	static HashMap<String, String> CACHE;
-			
+	
+	static HashMap<String, String> cache;
+	
+	static CpuTimes startCpus;
+	static JavaSysMon monitor;
+	
 	public static void main(String[] args) throws IOException {
 		// Get program arguments.
 		PORT_NUMBER 	= (args.length > 0) ? Integer.parseInt(args[0]) : PORT_NUMBER;
@@ -26,7 +30,7 @@ public class Server {
 	
 		// Initialize cache if needed.
 		if (CACHE_ANSWERS)
-			CACHE = new HashMap<String, String>();
+			cache = new HashMap<String, String>();
 		
 		// Kick-off web-server of specified port with a specified thread pool.
 		startServer();
@@ -37,8 +41,10 @@ public class Server {
 			// Initialize web server on specified port number.
 			HttpServer server = HttpServer.create(new InetSocketAddress(PORT_NUMBER), 0);
 			
-			// Set request handler and name space.
-			server.createContext("/compute", new requestHandler());
+			// Set request handlers and name space.
+			server.createContext("/compute", new computationHandler());
+			server.createContext("/start_recording", new startRecordingHandler());
+			server.createContext("/stop_recording", new stopRecordingHandler());
 			
 			// Use a thread pools for multithreading.
 			server.setExecutor(Executors.newFixedThreadPool(THREADS_COUNT)); 
@@ -51,15 +57,35 @@ public class Server {
 			e.printStackTrace();
 		}
 	}
+	
+	static synchronized void initNetworkRecording() {
+		// TODO
+	}
+	
+	static synchronized float getNetworkUsage() {
+		// TODO
+		return 0.0f;
+	}
+	
+	
+	static synchronized void initCpusRecording() {
+		System.out.println("Reinit CPUS recording");
+		monitor = new JavaSysMon();
+		startCpus = monitor.cpuTimes();
+	}
+	
+	static synchronized float getCpusUsage() {
+		return monitor.cpuTimes().getCpuUsage(startCpus);
+	}
 
-	public static class requestHandler implements HttpHandler {
+	public static class computationHandler implements HttpHandler {
 		        
 		public String compute(String input, int difficulty) {
 			Computation comp = new Computation(input, difficulty, DELAY_MS);
-			
+			// TODO: Move to synchronized method.
 			if (CACHE_ANSWERS) {
 				// Get cached answer. 
-				String cachedAnswer = CACHE.get(comp.cacheKey());
+				String cachedAnswer = cache.get(comp.cacheKey());
 				
 				// If answer is cached, return it immediately.
 				if (cachedAnswer!=null) 
@@ -67,7 +93,7 @@ public class Server {
 				// Else compute it.
 				else { 
 					String result = comp.compute();
-					CACHE.put(comp.cacheKey(), result);
+					cache.put(comp.cacheKey(), result);
 					return result;
 				}
 			}
@@ -75,45 +101,61 @@ public class Server {
 				return comp.compute();
 		}
 		
-		public void handle(HttpExchange exchange) {
-			try {
-				// Start recording processing time.
-				long startTime = System.currentTimeMillis();
-				
-				// Start monitoring CPUs.
-				JavaSysMon monitor = new JavaSysMon();
-				CpuTimes cpus1 = monitor.cpuTimes();
-				
-				// Read request difficulty and data.
-				BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
-				int difficulty = Integer.parseInt(reader.readLine());
-				String input = "";
-				for (String line = reader.readLine(); line != null; line = reader.readLine())
-					input+=line;
-				
-				// Print thread debug information.
-				String threadName = Thread.currentThread().getName();
-				System.out.format("Request for %s (Difficulty %d) processed by %s.\n", input, difficulty, threadName);
-				
-				// Compute
-				String computationResult = compute(input, difficulty);
+		public void handle(HttpExchange exchange) throws IOException {
+			// Start recording processing time.
+			long startTime = System.currentTimeMillis();
+			
+			// Read request difficulty and data.
+			BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
+			int difficulty = Integer.parseInt(reader.readLine());
+			String input = "";
+			for (String line = reader.readLine(); line != null; line = reader.readLine())
+				input+=line;
+			
+			// Print thread debug information.
+			String threadName = Thread.currentThread().getName();
+			System.out.format("Request for %s (Difficulty %d) processed by %s.\n", input, difficulty, threadName);
+			
+			// Compute
+			String computationResult = compute(input, difficulty);
 
-				// Stop monitoring CPUs.
-				CpuTimes cpus2 = monitor.cpuTimes();
-				float CpusUsage = cpus2.getCpuUsage(cpus1);
-				
-				// Prepare response
-				long timeElapsed = System.currentTimeMillis() - startTime;
-				String response = Long.toString(timeElapsed) + "\n" + CpusUsage + "\n" + computationResult;
-				
-				// Send response
-				exchange.sendResponseHeaders(200, response.length());
-				OutputStream outputStream = exchange.getResponseBody();
-				outputStream.write(response.getBytes());
-				
-				// Close stream
-				outputStream.close();
-			} catch (Exception e) {e.printStackTrace();}	
+			// Prepare response
+			long timeElapsed = System.currentTimeMillis() - startTime;
+			String response = Long.toString(timeElapsed) + "\n" + computationResult;
+			
+			// Send response
+			exchange.sendResponseHeaders(200, response.length());
+			OutputStream outputStream = exchange.getResponseBody();
+			outputStream.write(response.getBytes());
+			
+			// Close stream
+			outputStream.close();
        }
     }
+	
+	public static class startRecordingHandler implements HttpHandler {
+		public void handle(HttpExchange exchange) throws IOException {
+			System.out.println("Start Recording Request");
+			initCpusRecording();
+			exchange.sendResponseHeaders(200, (long)0);
+			exchange.getResponseBody().close();
+		}
+	}
+	
+	public static class stopRecordingHandler implements HttpHandler {
+		public void handle(HttpExchange exchange) throws IOException {
+			System.out.println("Stop Recording Request");
+			// Get data
+			float cpusUsage    = getCpusUsage();
+			float networkUsage = getNetworkUsage();
+			
+			// Prepare response
+			String response = cpusUsage + "\n" + networkUsage;
+			
+			// Send response
+			exchange.sendResponseHeaders(200, response.length());
+			OutputStream outputStream = exchange.getResponseBody();
+			outputStream.write(response.getBytes());
+		}
+	}
 }

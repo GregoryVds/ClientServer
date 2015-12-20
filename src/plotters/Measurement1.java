@@ -29,10 +29,10 @@ public class Measurement1{
 		XYSeries networkTimeSerie 	  = new XYSeries("Network Time", false, false);
 		XYSeries computationTimeSerie = new XYSeries("Computation Time", false, false);
 		
-		for (int i=1; i <= MAX_DIFFICULTY; i+=1000) {
-			ComputationResult res = client.issueComputationRequest(input, i);
-			networkTimeSerie.add(i, res.getNetworkTime());
-			computationTimeSerie.add(i, res.getComputationTime());
+		for (int difficulty=1; difficulty <= MAX_DIFFICULTY; difficulty+=1000) {
+			ComputationResult res = client.issueComputationRequest(input, difficulty);
+			networkTimeSerie.add(difficulty, res.getNetworkTime());
+			computationTimeSerie.add(difficulty, res.getComputationTime());
 		}
 		
         final DefaultTableXYDataset dataset = new DefaultTableXYDataset();
