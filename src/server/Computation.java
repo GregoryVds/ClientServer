@@ -1,4 +1,6 @@
-package perf;
+package server;
+
+import computation.SquareMatrix;
 
 public class Computation {
 	private String input;
@@ -12,15 +14,17 @@ public class Computation {
 	}
 	
 	public String compute() {
-		// Simulate fake delay in processing.
-		try {
-			Thread.sleep(delay);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		// Simulate fake delay in processing.		
+		if (delay>0) {
+			try {
+				Thread.sleep(delay);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		
+
 		// Perform computation f(input, difficulty)
-		return "dummyResult";
+		return SquareMatrix.powerMatrix(input, difficulty);
 	}
 	
 	public String cacheKey() {

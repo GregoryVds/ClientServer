@@ -1,6 +1,9 @@
-package perf;
+package client;
 
 import java.net.*;
+
+import lib.Lib;
+
 import java.io.*;
 
 public class Client {
@@ -13,20 +16,18 @@ public class Client {
 		URL 		= (args.length > 0) ? args[0] : URL;
 		DIFFICULTY 	= (args.length > 1) ? Integer.parseInt(args[1]) : DIFFICULTY;
 		INPUT_FILE 	= (args.length > 2) ? args[2] : INPUT_FILE;
-				
-		ComputationResult result = issueComputationRequest(getInput(), DIFFICULTY);
+		
+		Client client = new Client(URL);
+		ComputationResult result = client.issueComputationRequest(Lib.stringFromFile(INPUT_FILE), DIFFICULTY);
 		System.out.println(result);
 	}
-	
-	// Returns input as a String from input file
-	public static String getInput() throws IOException {
-		FileInputStream inputStream = new FileInputStream(INPUT_FILE);
-	    String input = Lib.convertStreamToString(inputStream);
-	    inputStream.close();
-	    return input;
+
+	public Client() { this(URL); }
+	public Client(String _url) {
+		URL = _url;
 	}
 	
-	public static ComputationResult issueComputationRequest(String input, int difficulty) throws Exception {
+	public ComputationResult issueComputationRequest(String input, int difficulty) throws Exception {
 		// Build the body of the request.
 		String body = buildRequestBody(input, difficulty);
 		
@@ -60,12 +61,12 @@ public class Client {
 	}
 	
 	// Build request body as a string.
-	public static String buildRequestBody(String body, int difficulty) {
+	public String buildRequestBody(String body, int difficulty) {
 		return Integer.toString(difficulty)+'\n'+body;
 	}
 	
 	// Open the HTTP connection for a POST request.
-	public static HttpURLConnection getConnection() throws Exception {
+	public HttpURLConnection getConnection() throws Exception {
 		URL url = new URL(URL);
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 		con.setDoOutput(true);

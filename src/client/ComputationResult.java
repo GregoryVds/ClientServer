@@ -1,4 +1,4 @@
-package perf;
+package client;
 
 public class ComputationResult {
 	private long networkTime;

@@ -1,4 +1,4 @@
-package perf;
+package computation;
 
 public class SquareMatrix {
 	private double coefficients[][];
@@ -7,13 +7,13 @@ public class SquareMatrix {
 		coefficients = new double [rank][rank];
 	}
 	
-	public SquareMatrix pow(double power){
+	public SquareMatrix pow(int power){
 		if(power<=1)
 			return this;
 		
 		SquareMatrix tmp = this.MultiplicationSquareMatrix(this);
-		for(double i=0; i<power-2; i++){
-			tmp= tmp.MultiplicationSquareMatrix(this);
+		for(int i=0; i<power-2; i++){
+			tmp = tmp.MultiplicationSquareMatrix(this);
 		}
 		return tmp;
 	}
@@ -66,6 +66,7 @@ public class SquareMatrix {
 	}
 	
 	public static SquareMatrix StringConvertToMatrix(String stringMatrix){
+		System.out.println(stringMatrix);
 		String[] rows = stringMatrix.split(";");
 		SquareMatrix matrix = new SquareMatrix(rows.length);
 		double [][] coeficients = new double[rows.length][rows.length];
@@ -83,16 +84,14 @@ public class SquareMatrix {
 	
 	
 	/*
-	 * @pre : 	data must be in this form : a,b,c,d;e,f,g,h;i,j,k,l;m,n,o,p/t
+	 * @pre : 	matrix must be in this form : a,b,c,d;e,f,g,h;i,j,k,l;m,n,o,p
 	 * 			where 	; represent row of matrix
 	 * 					a to p the coeficient of matrix
-	 * 					/t power of matrix
 	 * 					the matrix must be square
 	 */
-	public static String powerMatrix(String data){
-		String[] datas = data.split("/");
-		SquareMatrix matrixA = StringConvertToMatrix(datas[0]);
-		SquareMatrix resultat = matrixA.pow(Double.parseDouble(datas[1]));
+	public static String powerMatrix(String matrix, int exponent) {
+		SquareMatrix matrixA = StringConvertToMatrix(matrix);
+		SquareMatrix resultat = matrixA.pow(exponent);
 		return resultat.toString();
 	}
 	

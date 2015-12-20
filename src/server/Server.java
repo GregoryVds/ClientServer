@@ -1,10 +1,11 @@
-package perf;
+package server;
 
 import java.net.InetSocketAddress;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.io.*;
 import com.sun.net.httpserver.*;
+
 import java.util.HashMap;
 
 public class Server {
@@ -50,29 +51,32 @@ public class Server {
 	}
 
 	public static class requestHandler implements HttpHandler {
-				
+		        
 		public String compute(String input, int difficulty) {
 			Computation comp = new Computation(input, difficulty, DELAY_MS);
 			
-			// Get cached answer. 
-			String cachedAnswer = CACHE_ANSWERS ? CACHE.get(comp.cacheKey()) : null;
-			
-			// If answer is cached, return it immediately.
-			if (cachedAnswer!=null) 
-				return cachedAnswer;
-			// Else compute it.
-			else { 
-				String result = comp.compute();
-				// Store result in cache.
-				CACHE.put(comp.cacheKey(), result);
-				// Return result as string.
-				return result;
+			if (CACHE_ANSWERS) {
+				// Get cached answer. 
+				String cachedAnswer = CACHE.get(comp.cacheKey());
+				
+				// If answer is cached, return it immediately.
+				if (cachedAnswer!=null) 
+					return cachedAnswer;
+				// Else compute it.
+				else { 
+					String result = comp.compute();
+					CACHE.put(comp.cacheKey(), result);
+					return result;
+				}
 			}
+			else 
+				return comp.compute();
 		}
 		
 		public void handle(HttpExchange exchange) {
 			try {
 				// Start recording processing time.
+				System.out.println("Handling request");
 				long startTime = System.currentTimeMillis();
 				
 				// Read request difficulty and data.
@@ -81,6 +85,7 @@ public class Server {
 				String input = "";
 				for (String line = reader.readLine(); line != null; line = reader.readLine())
 					input+=line;
+				System.out.println("Request data read");
 				
 				// Print thread debug information.
 				String threadName = Thread.currentThread().getName();
@@ -100,7 +105,7 @@ public class Server {
 				
 				// Close stream
 				outputStream.close();
-			} catch (NumberFormatException | IOException e) {e.printStackTrace();}	
+			} catch (Exception e) {e.printStackTrace();}	
        }
     }
 }
