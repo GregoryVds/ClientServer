@@ -10,6 +10,12 @@ import client.Client;
 import client.ComputationResult;
 import client.RecordingResult;
 import lib.Lib;
+
+import java.util.concurrent.Future;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
 
@@ -50,36 +56,51 @@ public class Measurement2 {
 		String input = Lib.stringFromFile(FILE_PATH);
 		Client client = new Client();
 		
-		XYSeries cpusUsage      = new XYSeries("CPUs Usage", false, false);
-		XYSeries networkUsage   = new XYSeries("Network Usage", false, false);
-		XYSeries avgReponseTime = new XYSeries("Avg Response Time", false, false);
+		ExecutorService threadPool 	= Executors.newCachedThreadPool();
+		XYSeries cpusUsage     	 	= new XYSeries("CPUs Usage", false, false);
+		XYSeries networkUsage   	= new XYSeries("Network Usage", false, false);
+		XYSeries avgReponseTime 	= new XYSeries("Avg Response Time", false, false);
 		
 		for (int requestRate=1; requestRate <= MAX_REQUEST_RATE; requestRate+=10) {
 			System.out.println(String.format("NEW SAMPLE FOR RATE %d (%f)", requestRate, 1.0/requestRate));
 			// Instantiate new exponential distribution with current request rate.
 			ExponentialDistribution dist = new ExponentialDistribution(1.0/requestRate);
-			client.issueStartRecordingRequest();
-			long totalReponsesTime = 0;
 			
+			// Create array to hold futures.
+			@SuppressWarnings("unchecked")
+			Future<ComputationResult>[] futures = (Future<ComputationResult>[]) new Future[REQUESTS_PER_SAMPLE];
+			
+			// Start recording CPU & Network.
+			client.issueStartRecordingRequest();
 			for (int i=0; i<REQUESTS_PER_SAMPLE; i++) {
-				// Issue request.
-				ComputationResult res = client.issueComputationRequest(input, getRandomDifficulty());
-				
-				// Track response time.
-				totalReponsesTime+=res.getTotalTime();
+				// Prepare Callable.
+		        Callable<ComputationResult> asyncRequest = () -> {
+		            return client.issueComputationRequest(input, getRandomDifficulty());
+		        };
+		        
+				// Issue request and save future value.
+				futures[i] = threadPool.submit(asyncRequest);
 				
 				// Sleep for random time.
 				long sleepTime = (long)(dist.sample()*1000);
 				System.out.println("Sleep for: "+sleepTime);
 				Thread.sleep(sleepTime);
 			}
-	
+			
+			// Compute average request time. 
+			long totalResponseTime = 0;
+			for (Future<ComputationResult> future : futures)
+				totalResponseTime+=future.get().getTotalTime();
+			
 			// Record results.
 			RecordingResult res = client.issueStopRecordingRequest();
 			cpusUsage.add(requestRate, res.getCpusUsage());
 			networkUsage.add(requestRate, res.getNetworkUsage());
-			avgReponseTime.add(requestRate, totalReponsesTime/REQUESTS_PER_SAMPLE);
+			avgReponseTime.add(requestRate, totalResponseTime/REQUESTS_PER_SAMPLE);
 		}
+		
+		// Shutdown thread pool
+		threadPool.shutdown();
 		
         final DefaultTableXYDataset dataset1 = new DefaultTableXYDataset();
 		dataset1.addSeries(cpusUsage);
