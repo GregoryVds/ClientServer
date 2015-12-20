@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.io.*;
 import com.sun.net.httpserver.*;
+import com.jezhumble.javasysmon.CpuTimes;
+import com.jezhumble.javasysmon.JavaSysMon;
 
 import java.util.HashMap;
 
@@ -76,8 +78,11 @@ public class Server {
 		public void handle(HttpExchange exchange) {
 			try {
 				// Start recording processing time.
-				System.out.println("Handling request");
 				long startTime = System.currentTimeMillis();
+				
+				// Start monitoring CPUs.
+				JavaSysMon monitor = new JavaSysMon();
+				CpuTimes cpus1 = monitor.cpuTimes();
 				
 				// Read request difficulty and data.
 				BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
@@ -85,7 +90,6 @@ public class Server {
 				String input = "";
 				for (String line = reader.readLine(); line != null; line = reader.readLine())
 					input+=line;
-				System.out.println("Request data read");
 				
 				// Print thread debug information.
 				String threadName = Thread.currentThread().getName();
@@ -94,9 +98,13 @@ public class Server {
 				// Compute
 				String computationResult = compute(input, difficulty);
 
+				// Stop monitoring CPUs.
+				CpuTimes cpus2 = monitor.cpuTimes();
+				float CpusUsage = cpus2.getCpuUsage(cpus1);
+				
 				// Prepare response
 				long timeElapsed = System.currentTimeMillis() - startTime;
-				String response = Long.toString(timeElapsed) + "\n" + computationResult;
+				String response = Long.toString(timeElapsed) + "\n" + CpusUsage + "\n" + computationResult;
 				
 				// Send response
 				exchange.sendResponseHeaders(200, response.length());

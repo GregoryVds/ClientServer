@@ -66,7 +66,6 @@ public class SquareMatrix {
 	}
 	
 	public static SquareMatrix StringConvertToMatrix(String stringMatrix){
-		System.out.println(stringMatrix);
 		String[] rows = stringMatrix.split(";");
 		SquareMatrix matrix = new SquareMatrix(rows.length);
 		double [][] coeficients = new double[rows.length][rows.length];

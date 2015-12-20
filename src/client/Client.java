@@ -47,6 +47,7 @@ public class Client {
 		// Read response.
 		BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
 		int computationTime = Integer.parseInt(reader.readLine());
+		float cpusUsage = Float.parseFloat(reader.readLine());
 		String result = "";
 		for (String line = reader.readLine(); line != null; line = reader.readLine())
 			result+=line;
@@ -57,7 +58,7 @@ public class Client {
 		long networkTime = timeElapsed - computationTime;
 			
 		// Return computation result
-		return new ComputationResult(difficulty, result, networkTime, computationTime);
+		return new ComputationResult(difficulty, result, networkTime, computationTime, cpusUsage);
 	}
 	
 	// Build request body as a string.
