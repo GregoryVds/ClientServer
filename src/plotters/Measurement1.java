@@ -29,7 +29,7 @@ public class Measurement1{
 		XYSeries networkTimeSerie 	  = new XYSeries("Network Time", false, false);
 		XYSeries computationTimeSerie = new XYSeries("Computation Time", false, false);
 		
-		for (int difficulty=1; difficulty <= MAX_DIFFICULTY; difficulty+=1000) {
+		for (int difficulty=1; difficulty <= MAX_DIFFICULTY; difficulty+=10000) {
 			ComputationResult res = client.issueComputationRequest(input, difficulty);
 			networkTimeSerie.add(difficulty, res.getNetworkTime());
 			computationTimeSerie.add(difficulty, res.getComputationTime());

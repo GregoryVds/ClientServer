@@ -20,10 +20,12 @@ import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
 
 public class Measurement2 {
-	static final int MAX_REQUEST_RATE 		= 100;
-	static final int REQUESTS_PER_SAMPLE 	= 10;
-	static final double DIFFICULTY_MEAN 	= 1000;
-	static final double DIFFICULTY_STDEV 	= 100;
+	static final int REQUEST_RATE_INCREMENT = 5;
+	static final int MAX_REQUEST_RATE 		= 50;
+	static final int REQUESTS_PER_SAMPLE 	= 30;
+	static final double DIFFICULTY_MEAN 	= 500000;
+	static final double DIFFICULTY_STDEV 	= 1;
+	
 	
 	static String FILE_PATH 			= "input.txt";
 	
@@ -61,7 +63,7 @@ public class Measurement2 {
 		XYSeries networkUsage   	= new XYSeries("Network Usage", false, false);
 		XYSeries avgReponseTime 	= new XYSeries("Avg Response Time", false, false);
 		
-		for (int requestRate=1; requestRate <= MAX_REQUEST_RATE; requestRate+=10) {
+		for (int requestRate=1; requestRate <= MAX_REQUEST_RATE; requestRate+=REQUEST_RATE_INCREMENT) {
 			System.out.println(String.format("NEW SAMPLE FOR RATE %d (%f)", requestRate, 1.0/requestRate));
 			// Instantiate new exponential distribution with current request rate.
 			ExponentialDistribution dist = new ExponentialDistribution(1.0/requestRate);
@@ -82,9 +84,10 @@ public class Measurement2 {
 				futures[i] = threadPool.submit(asyncRequest);
 				
 				// Sleep for random time.
-				long sleepTime = (long)(dist.sample()*1000);
+				long sleepTime = (long)(dist.sample()*1000*1000*1000);
+				long start = System.nanoTime();
 				System.out.println("Sleep for: "+sleepTime);
-				Thread.sleep(sleepTime);
+				while(start + sleepTime >= System.nanoTime());
 			}
 			
 			// Compute average request time. 
