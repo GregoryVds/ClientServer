@@ -14,18 +14,18 @@ import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
 
 public class Measurement2 {
-	static final int MAX_REQUEST_RATE = 100;
-	static final int REQUESTS_PER_SAMPLE = 10;
-	static final double DIFFICULTY_MEAN = 1000;
-	static final double DIFFICULTY_STDEV = 100;
+	static final int MAX_REQUEST_RATE 		= 100;
+	static final int REQUESTS_PER_SAMPLE 	= 10;
+	static final double DIFFICULTY_MEAN 	= 1000;
+	static final double DIFFICULTY_STDEV 	= 100;
 	
-	static String FILE_PATH = "input.txt";
+	static String FILE_PATH 			= "input.txt";
 	
-	static String PLOT1_TITLE 	= "CPUs/Network Load vs Request Rate";
+	static String PLOT1_TITLE 			= "CPUs/Network Load vs Request Rate";
 	static String PLOT1_X_AXIS_LABEL 	= "Request Rate";
 	static String PLOT1_Y_AXIS_LABEL 	= "Load (%)";
 	
-	static String PLOT2_TITLE = "Response Time vs Request Rate";
+	static String PLOT2_TITLE 			= "Response Time vs Request Rate";
 	static String PLOT2_X_AXIS_LABEL 	= "Request Rate";
 	static String PLOT2_Y_AXIS_LABEL 	= "Response Time (Ms)";
 	

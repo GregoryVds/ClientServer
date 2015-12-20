@@ -67,7 +67,6 @@ public class Server {
 		return 0.0f;
 	}
 	
-	
 	static synchronized void initCpusRecording() {
 		System.out.println("Reinit CPUS recording");
 		monitor = new JavaSysMon();
@@ -78,14 +77,21 @@ public class Server {
 		return monitor.cpuTimes().getCpuUsage(startCpus);
 	}
 
+	static synchronized String getFromCache(String key) {
+		return cache.get(key);
+	}
+	
+	static synchronized void addToCache(String key, String result) {
+		cache.put(key, result);
+	}
+	
 	public static class computationHandler implements HttpHandler {
 		        
 		public String compute(String input, int difficulty) {
 			Computation comp = new Computation(input, difficulty, DELAY_MS);
-			// TODO: Move to synchronized method.
 			if (CACHE_ANSWERS) {
 				// Get cached answer. 
-				String cachedAnswer = cache.get(comp.cacheKey());
+				String cachedAnswer = getFromCache(comp.cacheKey());
 				
 				// If answer is cached, return it immediately.
 				if (cachedAnswer!=null) 
@@ -93,7 +99,7 @@ public class Server {
 				// Else compute it.
 				else { 
 					String result = comp.compute();
-					cache.put(comp.cacheKey(), result);
+					addToCache(comp.cacheKey(), result);
 					return result;
 				}
 			}
