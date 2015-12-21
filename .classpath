@@ -6,10 +6,10 @@
 			<accessrule kind="accessible" pattern="com/sun/net/httpserver/**"/>
 		</accessrules>
 	</classpathentry>
-	<classpathentry kind="lib" path="/Users/Greg/Desktop/Eclipse/cache_contents_mngt/src/vendor/junit-4.12.jar"/>
-	<classpathentry kind="lib" path="/Users/Greg/Desktop/Eclipse/cache_contents_mngt/src/vendor/jfreechart-1.0.19.jar"/>
-	<classpathentry kind="lib" path="/Users/Greg/Desktop/Eclipse/cache_contents_mngt/src/vendor/jcommon-1.0.23.jar"/>
-	<classpathentry kind="lib" path="/Users/Greg/Desktop/javasysmon/target/javasysmon.jar"/>
-	<classpathentry kind="lib" path="/Users/Greg/Desktop/commons-math3-3.5.jar"/>
+	<classpathentry kind="lib" path="src/vendor/commons-math3-3.5.jar"/>
+	<classpathentry kind="lib" path="src/vendor/javasysmon.jar"/>
+	<classpathentry kind="lib" path="src/vendor/jcommon-1.0.23.jar"/>
+	<classpathentry kind="lib" path="src/vendor/jfreechart-1.0.19.jar"/>
+	<classpathentry kind="lib" path="src/vendor/junit-4.12.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

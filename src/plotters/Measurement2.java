@@ -25,7 +25,7 @@ public class Measurement2 {
 	static final int REQUESTS_PER_SAMPLE 	= 30;
 	static final double DIFFICULTY_MEAN 	= 500000;
 	static final double DIFFICULTY_STDEV 	= 1;
-	
+	static final boolean GAUSSIAN_DISTRIBUTION_FOR_DIFFICULTY = true;  
 	
 	static String FILE_PATH 			= "input.txt";
 	
