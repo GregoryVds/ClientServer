@@ -88,18 +88,24 @@ public class Client {
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public void issueStartRecordingRequest() throws Exception {
+		System.out.println("Issuing start_recording request.");
+		
 		// Open HTTP connection.
-		System.out.println("Issuing new recording");
 		HttpURLConnection con = getConnection(URL + "/start_recording");
+		
+		// Get Response Code.
 		int code = con.getResponseCode();
 		if (code!=200) 
 			throw new Exception("Did not start recording");
+		
 		con.disconnect();
 	}
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public RecordingResult issueStopRecordingRequest() throws Exception {
+		System.out.println("Issuing stop_recording request.");
+		
 		// Open HTTP connection.
 		HttpURLConnection con = getConnection(URL + "/stop_recording");	
 		con.setDoInput(true);
@@ -107,11 +113,64 @@ public class Client {
 		// Read response.
 		BufferedReader reader 	= new BufferedReader(new InputStreamReader(con.getInputStream()));
 		float cpusUsage 		= Float.parseFloat(reader.readLine());
+		float cacheHitRate		= Float.parseFloat(reader.readLine());
 		
 		con.disconnect();
-		return new RecordingResult(cpusUsage, 0);
+		return new RecordingResult(cpusUsage, cacheHitRate);
 	}
 		
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	public void issueSetThreadsCountRequest(int threadsCount) throws Exception {
+		System.out.println("Issuing set_threads_count request.");
+		
+		// Open HTTP connection.
+		HttpURLConnection con = getConnection(URL + "/set_threads_count");	
+		con.setDoOutput(true);
+		
+		// Get the bytes to transfer.
+		String body = Integer.toString(threadsCount);
+		byte[] postData = body.getBytes();
+				
+		// Send data.
+		con.setRequestProperty("Content-Length", Integer.toString(postData.length));
+		new DataOutputStream(con.getOutputStream()).write(postData);
+		
+		// Get Response Code.
+		int code = con.getResponseCode();
+		if (code!=200) 
+			throw new Exception("Did not set threads count.");
+		
+		Thread.sleep(1000);
+		con.disconnect();
+	}	
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	public void issueEnableCachingRequest() throws Exception {
+		System.out.println("Issuing enable_caching request.");
+		
+		// Open HTTP connection.
+		HttpURLConnection con = getConnection(URL + "/enable_caching");
+		int code = con.getResponseCode();
+		if (code!=200) 
+			throw new Exception("Did not enable caching");
+		con.disconnect();
+	}	
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	public void issueDisableCachingRequest() throws Exception {
+		System.out.println("Issuing disable_caching request.");
+		
+		// Open HTTP connection.
+		HttpURLConnection con = getConnection(URL + "/disable_caching");
+		int code = con.getResponseCode();
+		if (code!=200) 
+			throw new Exception("Did not disable caching.");
+		con.disconnect();
+	}	
+	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	// Build request body as a string.

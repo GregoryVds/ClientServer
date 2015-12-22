@@ -35,6 +35,10 @@ public class Server {
 	static HashMap<String, String> cache;
 	static CpuTimes startCpus;
 	static JavaSysMon monitor;
+	static HttpServer server;
+	
+	static int cacheHits   = 0;
+	static int cacheMisses = 0;
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -46,9 +50,8 @@ public class Server {
 		CACHE_ANSWERS	= (args.length > 3) ? Boolean.parseBoolean(args[3]) : CACHE_ANSWERS;
 		SOCKET_BACKLOG	= (args.length > 4) ? Integer.parseInt(args[4]) : SOCKET_BACKLOG;
 	
-		// Initialize cache if needed.
-		if (CACHE_ANSWERS)
-			cache = new HashMap<String, String>();
+		// Initialize cache
+		cache = new HashMap<String, String>();
 		
 		// Kick-off web-server of specified port with a specified thread pool.
 		startServer();
@@ -59,12 +62,15 @@ public class Server {
 	static void startServer() {
 		try {
 			// Initialize web server on specified port number.
-			HttpServer server = HttpServer.create(new InetSocketAddress(PORT_NUMBER), SOCKET_BACKLOG);
+			server = HttpServer.create(new InetSocketAddress(PORT_NUMBER), SOCKET_BACKLOG);
 			
 			// Set request handlers and name space.
-			server.createContext("/compute", new computationHandler());
-			server.createContext("/start_recording", new startRecordingHandler());
-			server.createContext("/stop_recording", new stopRecordingHandler());
+			server.createContext("/compute", 			new computationHandler());
+			server.createContext("/start_recording", 	new startRecordingHandler());
+			server.createContext("/stop_recording", 	new stopRecordingHandler());
+			server.createContext("/enable_caching", 	new enableCachingHandler());
+			server.createContext("/disable_caching", 	new disableCachingHandler());
+			server.createContext("/set_threads_count", 	new setThreadsCountHandler());
 			
 			// Use a thread pools for multithreading.
 			server.setExecutor(Executors.newFixedThreadPool(THREADS_COUNT)); 
@@ -98,16 +104,30 @@ public class Server {
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	static synchronized String getFromCache(String key) {
-		return cache.get(key);
+	static synchronized String getFromCache(String key) { return cache.get(key); }
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	static synchronized void addToCache(String key, String result) { cache.put(key, result); }
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	static synchronized void setCacheAnswers(boolean bool) { CACHE_ANSWERS = bool; }
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	static synchronized void clearCache() { 
+		cache.clear();
+		cacheHits=0;
+		cacheMisses=0;
 	}
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
-	static synchronized void addToCache(String key, String result) {
-		cache.put(key, result);
-	}
-	
+	static synchronized void newCacheHit() 		{ cacheHits++; }
+	static synchronized void newCacheMiss() 	{ cacheMisses++; }
+	static synchronized float getHitRate() 		{ return ((float)cacheHits)/(cacheMisses+cacheHits); }
+		
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public static class computationHandler implements HttpHandler {
@@ -119,10 +139,13 @@ public class Server {
 				String cachedAnswer = getFromCache(comp.cacheKey());
 				
 				// If answer is cached, return it immediately.
-				if (cachedAnswer!=null) 
+				if (cachedAnswer!=null) {
+					newCacheHit();
 					return cachedAnswer;
+				}
 				// Else compute it.
 				else { 
+					newCacheMiss();
 					String result = comp.compute();
 					addToCache(comp.cacheKey(), result);
 					return result;
@@ -143,10 +166,11 @@ public class Server {
 				String input = "";
 				for (String line = reader.readLine(); line != null; line = reader.readLine())
 					input+=line;
+				reader.close();
 				
 				// Print thread debug information.
 				String threadName = Thread.currentThread().getName();
-				System.out.format("Request for %s (Difficulty %d) processed by %s.\n", input, difficulty, threadName);
+				System.out.format("Request processed by %s. Exponent: %d. Input: %s\n", threadName, difficulty, input);
 				
 				// Compute
 				String computationResult = compute(input, difficulty);
@@ -171,6 +195,7 @@ public class Server {
 	public static class startRecordingHandler implements HttpHandler {
 		public void handle(HttpExchange exchange) throws IOException {
 			System.out.println("Start Recording Request");
+			clearCache();
 			initCpusRecording();
 			exchange.sendResponseHeaders(200, (long)0);
 			exchange.getResponseBody().close();
@@ -183,15 +208,60 @@ public class Server {
 		public void handle(HttpExchange exchange) throws IOException {
 			System.out.println("Stop Recording Request");
 			// Get data
-			float cpusUsage    = getCpusUsage();
-			
+			float cpusUsage = getCpusUsage();
+			float cacheHitRate = getHitRate();
+		
 			// Prepare response
-			String response = cpusUsage + "\n";
+			String response = cpusUsage + "\n" + cacheHitRate + "\n";
 			
 			// Send response
 			exchange.sendResponseHeaders(200, response.length());
 			OutputStream outputStream = exchange.getResponseBody();
 			outputStream.write(response.getBytes());
+		}
+	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+		
+	public static class enableCachingHandler implements HttpHandler {
+		public void handle(HttpExchange exchange) throws IOException {
+			System.out.println("Enable Caching.");
+			setCacheAnswers(true);
+			exchange.sendResponseHeaders(200, (long)0);
+			exchange.getResponseBody().close();
+		}
+	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	public static class disableCachingHandler implements HttpHandler {
+		public void handle(HttpExchange exchange) throws IOException {
+			System.out.println("Disable Caching.");
+			setCacheAnswers(false);
+			clearCache();
+			exchange.sendResponseHeaders(200, (long)0);
+			exchange.getResponseBody().close();
+		}
+	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+			
+	public static class setThreadsCountHandler implements HttpHandler {
+		public void handle(HttpExchange exchange) throws IOException {		
+			// Read request difficulty and data.
+			BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
+			int threadsCount = Integer.parseInt(reader.readLine());
+			System.out.format("Set threads count to %d\n.", threadsCount);
+			reader.close();
+			
+			// Respond
+			exchange.sendResponseHeaders(200, (long)0);
+			exchange.getResponseBody().close();
+			
+			// Restart server
+			server.stop(0);
+			server.setExecutor(Executors.newFixedThreadPool(threadsCount));
+			server.start();
 		}
 	}
 	

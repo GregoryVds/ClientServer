@@ -19,19 +19,19 @@ package client;
 
 public class RecordingResult {
 	private float cpusUsage;
-	private float networkUsage;
+	private float cacheHitRate;
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
-	RecordingResult(float _cpusUsage, float _networkUsage) {
+	RecordingResult(float _cpusUsage, float _cacheHitRate) {
 		cpusUsage 		= _cpusUsage;
-		networkUsage 	= _networkUsage;
+		cacheHitRate 	= _cacheHitRate;
 	}
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public float getCpusUsage() { return cpusUsage; }
-	public float getNetworkUsage() { return networkUsage; }
+	public float getCacheHitRate() { return cacheHitRate; }
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 }

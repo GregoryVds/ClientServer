@@ -11,6 +11,8 @@
 package lib;
 import java.io.*;
 
+import org.apache.commons.math3.distribution.ExponentialDistribution;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 public class Lib {
@@ -52,5 +54,18 @@ public class Lib {
 		return matrix;
 	}
 	
+	//////////////////////////////////////////////////////////////////////////////////////////////
+	
+	static ExponentialDistribution expDifficultyGenerator;
+	
 	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	// Returns a random number for difficulty (Exponential distribution).
+	public static int getExponentialSample(double mean) {
+		if (expDifficultyGenerator==null)
+			expDifficultyGenerator = new ExponentialDistribution(mean);
+		return (int) Math.round(expDifficultyGenerator.sample());	
+	}
+	
+///////////////////////////////////////////////////////////////////////////////////////////////
 }
