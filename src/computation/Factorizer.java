@@ -1,11 +1,22 @@
+/**
+ * Factorizer decomposes a number into a list of its prime factors.
+ * 
+ * @author      Grégory Vander Schueren
+ */
+
 package computation;
 
 import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 public class Factorizer {
-	public static List<String> factorize(BigInteger number) {
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	public static String factorize(BigInteger number) {
 		List<String> factors = new LinkedList<String>();
 		BigInteger two  = BigInteger.valueOf(2);
 		BigInteger one  = BigInteger.ONE;
@@ -17,6 +28,12 @@ public class Factorizer {
 			}
 		}
 		
-		return factors;
+		String str = "";
+		for (String factor : factors) 
+			str+=factor + " ";
+		
+		return str;
 	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 }

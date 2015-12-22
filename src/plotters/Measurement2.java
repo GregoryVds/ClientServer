@@ -1,3 +1,17 @@
+/**
+ * Measurement2 acts a load generator to perform various measurements required by HW2.
+ * 
+ * It measures the computation and network times as a function of the request difficulty.
+ * Parameters are easily adjustable to automate the generation of the plots.
+ * It display a Chart with the results.
+ *  
+ * @author      Grégory Vander Schueren
+ * @author      Jérôme Lemaire
+ * @date 		December 24h, 2015
+ */
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 package plotters;
 
 import org.jfree.chart.ChartFactory;
@@ -19,6 +33,8 @@ import java.util.concurrent.Executors;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 public class Measurement2 {
 	static final int REQUEST_RATE_INCREMENT = 5;
 	static final int MAX_REQUEST_RATE 		= 50;
@@ -37,7 +53,10 @@ public class Measurement2 {
 	static String PLOT2_X_AXIS_LABEL 	= "Request Rate";
 	static String PLOT2_Y_AXIS_LABEL 	= "Response Time (Ms)";
 	
-	static NormalDistribution difficultyGenerator;
+	static NormalDistribution gaussianDifficultyGenerator;
+	static ExponentialDistribution expDifficultyGenerator;
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public static void main(String[] args) throws Exception {
 		XYDataset[] datasets = createDataset();
@@ -47,14 +66,10 @@ public class Measurement2 {
 		ChartApp.displayChart(chart1, PLOT1_TITLE);
 		ChartApp.displayChart(chart2, PLOT2_TITLE);
 	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	
-	public static int getRandomDifficulty() {
-		if (difficultyGenerator==null) 
-			difficultyGenerator = new NormalDistribution(DIFFICULTY_MEAN, DIFFICULTY_STDEV);
-		return (int) Math.round(difficultyGenerator.sample());
-	}
-		
-	static XYDataset[] createDataset() throws Exception {
+	private static XYDataset[] createDataset() throws Exception {
 		String input = Lib.stringFromFile(FILE_PATH);
 		Client client = new Client();
 		
@@ -113,5 +128,33 @@ public class Measurement2 {
 		dataset2.addSeries(avgReponseTime);
 	
 		return new XYDataset[]{dataset1, dataset2};
-   }
+    }
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	// Returns a random number for difficulty (Gaussian distribution).
+	private static int getGaussianRandomDifficulty() {
+		if (gaussianDifficultyGenerator==null) 
+			gaussianDifficultyGenerator = new NormalDistribution(DIFFICULTY_MEAN, DIFFICULTY_STDEV);
+		return (int) Math.round(gaussianDifficultyGenerator.sample());
+	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	// Returns a random number for difficulty (Exponential distribution).
+	private static int getExponentialRandomDifficulty() {
+		if (expDifficultyGenerator==null)
+			expDifficultyGenerator = new ExponentialDistribution(DIFFICULTY_MEAN);
+		return (int) Math.round(expDifficultyGenerator.sample());	
+	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	// Generate random difficulty (either Gaussian Distribution or Exponential Distribution).
+	private static int getRandomDifficulty() {
+		if (GAUSSIAN_DISTRIBUTION_FOR_DIFFICULTY)
+			return getGaussianRandomDifficulty();
+		else
+			return getExponentialRandomDifficulty();
+	}
 }

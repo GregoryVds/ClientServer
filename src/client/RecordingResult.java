@@ -1,14 +1,37 @@
+/**
+ * RecordingResult is a simple class that encapsulate the result of a performance recording
+ * performed by the server.
+ * 
+ * It contains the following information:
+ * 	- CPUsUsage in percentage.
+ *  - NetworkUsage in percentage.
+ *  
+ * @author      Grégory Vander Schueren
+ * @author      Jérôme Lemaire
+ * @date 		December 24h, 2015
+ */
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 package client;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 public class RecordingResult {
 	private float cpusUsage;
 	private float networkUsage;
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	RecordingResult(float _cpusUsage, float _networkUsage) {
 		cpusUsage 		= _cpusUsage;
 		networkUsage 	= _networkUsage;
 	}
 	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
 	public float getCpusUsage() { return cpusUsage; }
 	public float getNetworkUsage() { return networkUsage; }
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 }

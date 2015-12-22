@@ -1,15 +1,33 @@
+/**
+ * Client is a simple HTTP client used to issue computation requests to our server.
+ * A computation request will raise any given square matrix to an exponent.
+ * 
+ * It can issue 3 types of requests: 
+ * 	- Request to make a computation of given difficulty (exponent) on a given input (square matrix).
+ *  - Request to start recording CPU times.
+ *  - Request to stop recording CPU times and return the average load.
+ * 
+ * @author      Grégory Vander Schueren
+ * @author      Jérôme Lemaire
+ * @date 		December 24h, 2015
+ */
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 package client;
 
 import java.net.*;
-
 import lib.Lib;
-
 import java.io.*;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 public class Client {
 	static String URL     		= "http://localhost:3000"; // Default Argument
 	static int DIFFICULTY  		= 1;
 	static String INPUT_FILE 	= "input.txt";
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public static void main(String[] args) throws Exception {
 		// Get program arguments.
@@ -22,10 +40,12 @@ public class Client {
 		System.out.println(result);
 	}
 
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
 	public Client() { this(URL); }
-	public Client(String _url) {
-		URL = _url;
-	}
+	public Client(String _url) { URL = _url; }
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public ComputationResult issueComputationRequest(String input, int difficulty) throws Exception {
 		// Build the body of the request.
@@ -54,6 +74,9 @@ public class Client {
 			result+=line;
 		reader.close();
 		
+		// Close connection
+		con.disconnect();
+		
 		// Stop timer.
 		long timeElapsed = System.currentTimeMillis() - startTime;
 		long networkTime = timeElapsed - computationTime;
@@ -61,6 +84,8 @@ public class Client {
 		// Return computation result
 		return new ComputationResult(difficulty, result, networkTime, computationTime);
 	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public void issueStartRecordingRequest() throws Exception {
 		// Open HTTP connection.
@@ -72,6 +97,8 @@ public class Client {
 		con.disconnect();
 	}
 	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
 	public RecordingResult issueStopRecordingRequest() throws Exception {
 		// Open HTTP connection.
 		HttpURLConnection con = getConnection(URL + "/stop_recording");	
@@ -80,22 +107,27 @@ public class Client {
 		// Read response.
 		BufferedReader reader 	= new BufferedReader(new InputStreamReader(con.getInputStream()));
 		float cpusUsage 		= Float.parseFloat(reader.readLine());
-		float networkUsage 		= Float.parseFloat(reader.readLine());		
 		
 		con.disconnect();
-		return new RecordingResult(cpusUsage, networkUsage);
+		return new RecordingResult(cpusUsage, 0);
 	}
 		
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
 	// Build request body as a string.
-	public String buildRequestBody(String body, int difficulty) {
+	private String buildRequestBody(String body, int difficulty) {
 		return Integer.toString(difficulty)+'\n'+body;
 	}
 	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
 	// Open the HTTP connection for a POST request.
-	public HttpURLConnection getConnection(String _url) throws Exception {
+	private HttpURLConnection getConnection(String _url) throws Exception {
 		URL url = new URL(_url);
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 		con.setRequestMethod("POST");
 		return con;
 	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 }

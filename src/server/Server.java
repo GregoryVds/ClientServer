@@ -1,3 +1,17 @@
+/**
+ * Server acts as a simple HTTP server, responding to 3 types of requests:
+ * 		- A POST request "/compute" will raise a given matrix to a given exponent.
+ * 		- A request on "/start_recording" asks the server to start recording the CPU utilization.
+ * 		- A request on "/stop_recording" asks the server to stop recording the CPU utilization 
+ * 		  and return the average load.
+ * 
+ * @author      Grégory Vander Schueren
+ * @author      Jérôme Lemaire
+ * @date 		December 24h, 2015
+ */
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 package server;
 
 import java.net.InetSocketAddress;
@@ -7,8 +21,9 @@ import java.io.*;
 import com.sun.net.httpserver.*;
 import com.jezhumble.javasysmon.CpuTimes;
 import com.jezhumble.javasysmon.JavaSysMon;
-
 import java.util.HashMap;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 public class Server {
 	static int PORT_NUMBER 		 = 3000; 	// Default Argument
@@ -17,9 +32,10 @@ public class Server {
 	static boolean CACHE_ANSWERS = false;	// Default Argument
 	
 	static HashMap<String, String> cache;
-	
 	static CpuTimes startCpus;
 	static JavaSysMon monitor;
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public static void main(String[] args) throws IOException {
 		// Get program arguments.
@@ -36,6 +52,8 @@ public class Server {
 		startServer();
 	}
 	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
 	static void startServer() {
 		try {
 			// Initialize web server on specified port number.
@@ -51,21 +69,18 @@ public class Server {
 			
 			// Kick-off web-server.
 			server.start();
-			System.out.format("Server started.\nListening on port: %d.\n", PORT_NUMBER);
+			System.out.println("Server started.");
+			System.out.format("Listening on port: %d.\n", PORT_NUMBER);
+			System.out.format("Fake delay: %d.\n", DELAY_MS);
+			System.out.format("Cache answers: %b.\n", CACHE_ANSWERS);
+			
 		} catch (Exception e) {
 			System.out.println("Failed to start web server");
 			e.printStackTrace();
 		}
 	}
 	
-	static synchronized void initNetworkRecording() {
-		// TODO
-	}
-	
-	static synchronized float getNetworkUsage() {
-		// TODO
-		return 0.0f;
-	}
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	static synchronized void initCpusRecording() {
 		System.out.println("Reinit CPUS recording");
@@ -73,17 +88,25 @@ public class Server {
 		startCpus = monitor.cpuTimes();
 	}
 	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
 	static synchronized float getCpusUsage() {
 		return monitor.cpuTimes().getCpuUsage(startCpus);
 	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 
 	static synchronized String getFromCache(String key) {
 		return cache.get(key);
 	}
 	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
 	static synchronized void addToCache(String key, String result) {
 		cache.put(key, result);
 	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public static class computationHandler implements HttpHandler {
 		        
@@ -137,10 +160,11 @@ public class Server {
 				
 				// Close stream
 				outputStream.close();
-				
 			} catch (Exception e) { e.printStackTrace(); }	
        }
     }
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public static class startRecordingHandler implements HttpHandler {
 		public void handle(HttpExchange exchange) throws IOException {
@@ -151,15 +175,16 @@ public class Server {
 		}
 	}
 	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
 	public static class stopRecordingHandler implements HttpHandler {
 		public void handle(HttpExchange exchange) throws IOException {
 			System.out.println("Stop Recording Request");
 			// Get data
 			float cpusUsage    = getCpusUsage();
-			float networkUsage = getNetworkUsage();
 			
 			// Prepare response
-			String response = cpusUsage + "\n" + networkUsage;
+			String response = cpusUsage + "\n";
 			
 			// Send response
 			exchange.sendResponseHeaders(200, response.length());
@@ -167,4 +192,6 @@ public class Server {
 			outputStream.write(response.getBytes());
 		}
 	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 }

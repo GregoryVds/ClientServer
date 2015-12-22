@@ -1,3 +1,17 @@
+/**
+ * Measurement1 allows to easily perform the Measurement1 from HW2.
+ * 
+ * It measures the computation and network times as a function of the request difficulty.
+ * Parameters are easily adjustable to automate the generation of the plots.
+ * It display a Chart with the results.
+ *  
+ * @author      Grégory Vander Schueren
+ * @author      Jérôme Lemaire
+ * @date 		December 24h, 2015
+ */
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 package plotters;
 
 import org.jfree.chart.ChartFactory;
@@ -9,24 +23,30 @@ import client.Client;
 import client.ComputationResult;
 import lib.Lib;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 public class Measurement1{
-	static final int MAX_DIFFICULTY 		= 100000;
+	static final int MAX_DIFFICULTY 		= 1000000;
 	static final int DIFFICULTY_INCREMENT 	= 1000;
 	static final int TRIES_PER_DIFFICULTY   = 10;
-	static final String URL					= "http://localhost:3000";
+	static final String URL					= "http://85.26.33.41:3002";
 	
 	static String FILE_PATH 	= "input_small.txt";
 	
 	static String PLOT_TITLE 	= "Time vs Difficulty";
-	static String X_AXIS_LABEL 	= "Difficulty";
+	static String X_AXIS_LABEL 	= "Difficulty (Exponent)";
 	static String Y_AXIS_LABEL 	= "Time in ms";
-				
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
 	public static void main(String[] args) throws Exception {
 		final JFreeChart chart = ChartFactory.createStackedXYAreaChart(PLOT_TITLE, X_AXIS_LABEL, Y_AXIS_LABEL, createDataset());
 		ChartApp.displayChart(chart, PLOT_TITLE);
 	}
 	
-	static DefaultTableXYDataset createDataset() throws Exception {
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	private static DefaultTableXYDataset createDataset() throws Exception {
 		String input = Lib.stringFromFile(FILE_PATH);
 		Client client = new Client(URL);
 		
@@ -34,6 +54,7 @@ public class Measurement1{
 		XYSeries computationTimeSerie = new XYSeries("Computation Time", false, false);
 		
 		for (int difficulty=1; difficulty <= MAX_DIFFICULTY; difficulty+=DIFFICULTY_INCREMENT) {
+			System.out.format("Started difficulty: %d.\n", difficulty);
 			long networkTime = 0;
 			long computationTime = 0;
 					
@@ -53,4 +74,6 @@ public class Measurement1{
 	
 		return dataset;
    }
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 }
