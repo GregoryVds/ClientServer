@@ -11,10 +11,10 @@ import com.jezhumble.javasysmon.JavaSysMon;
 import java.util.HashMap;
 
 public class Server {
-	static int PORT_NUMBER 		 = 3000;
-	static int THREADS_COUNT 	 = 1;
-	static int DELAY_MS     	 = 500;	
-	static boolean CACHE_ANSWERS = false;
+	static int PORT_NUMBER 		 = 3000; 	// Default Argument
+	static int THREADS_COUNT 	 = 1;		// Default Argument
+	static int DELAY_MS     	 = 500;		// Default Argument
+	static boolean CACHE_ANSWERS = false;	// Default Argument
 	
 	static HashMap<String, String> cache;
 	
@@ -107,35 +107,39 @@ public class Server {
 				return comp.compute();
 		}
 		
-		public void handle(HttpExchange exchange) throws IOException {
-			// Start recording processing time.
-			long startTime = System.currentTimeMillis();
-			
-			// Read request difficulty and data.
-			BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
-			int difficulty = Integer.parseInt(reader.readLine());
-			String input = "";
-			for (String line = reader.readLine(); line != null; line = reader.readLine())
-				input+=line;
-			
-			// Print thread debug information.
-			String threadName = Thread.currentThread().getName();
-			System.out.format("Request for %s (Difficulty %d) processed by %s.\n", input, difficulty, threadName);
-			
-			// Compute
-			String computationResult = compute(input, difficulty);
-
-			// Prepare response
-			long timeElapsed = System.currentTimeMillis() - startTime;
-			String response = Long.toString(timeElapsed) + "\n" + computationResult;
-			
-			// Send response
-			exchange.sendResponseHeaders(200, response.length());
-			OutputStream outputStream = exchange.getResponseBody();
-			outputStream.write(response.getBytes());
-			
-			// Close stream
-			outputStream.close();
+		public void handle(HttpExchange exchange) {
+			try {
+				// Start recording processing time.
+				
+				
+				// Read request difficulty and data.
+				BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
+				int difficulty = Integer.parseInt(reader.readLine());
+				String input = "";
+				for (String line = reader.readLine(); line != null; line = reader.readLine())
+					input+=line;
+				
+				// Print thread debug information.
+				String threadName = Thread.currentThread().getName();
+				System.out.format("Request for %s (Difficulty %d) processed by %s.\n", input, difficulty, threadName);
+				
+				// Compute
+				long startTime = System.currentTimeMillis();
+				String computationResult = compute(input, difficulty);
+	
+				// Prepare response
+				long timeElapsed = System.currentTimeMillis() - startTime;
+				String response = Long.toString(timeElapsed) + "\n" + computationResult;
+				
+				// Send response
+				exchange.sendResponseHeaders(200, response.length());
+				OutputStream outputStream = exchange.getResponseBody();
+				outputStream.write(response.getBytes());
+				
+				// Close stream
+				outputStream.close();
+				
+			} catch (Exception e) { e.printStackTrace(); }	
        }
     }
 	

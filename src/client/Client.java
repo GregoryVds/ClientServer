@@ -7,7 +7,7 @@ import lib.Lib;
 import java.io.*;
 
 public class Client {
-	static String URL     		= "http://localhost:3000";
+	static String URL     		= "http://localhost:3000"; // Default Argument
 	static int DIFFICULTY  		= 1;
 	static String INPUT_FILE 	= "input.txt";
 	
