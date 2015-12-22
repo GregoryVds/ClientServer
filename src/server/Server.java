@@ -110,7 +110,7 @@ public class Server {
 		public void handle(HttpExchange exchange) {
 			try {
 				// Start recording processing time.
-				
+				long startTime = System.currentTimeMillis();
 				
 				// Read request difficulty and data.
 				BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
@@ -124,7 +124,6 @@ public class Server {
 				System.out.format("Request for %s (Difficulty %d) processed by %s.\n", input, difficulty, threadName);
 				
 				// Compute
-				long startTime = System.currentTimeMillis();
 				String computationResult = compute(input, difficulty);
 	
 				// Prepare response
