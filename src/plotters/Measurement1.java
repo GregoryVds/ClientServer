@@ -26,17 +26,43 @@ import lib.Lib;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 public class Measurement1{
+	// SETUP MEASUREMENT 1-A - Varies Exp
+	/*
 	static final int MAX_DIFFICULTY 		= 1000000;
 	static final int DIFFICULTY_INCREMENT 	= 1000;
 	static final int TRIES_PER_DIFFICULTY   = 10;
-	static final String URL					= "http://85.26.33.41:3002";
-	
-	static String FILE_PATH 	= "input_small.txt";
-	
+	static final boolean VARIES_EXPONENT  	= true;
+	static final int FIXED_PARAMETER		= 4;
 	static String PLOT_TITLE 	= "Time vs Difficulty";
 	static String X_AXIS_LABEL 	= "Difficulty (Exponent)";
 	static String Y_AXIS_LABEL 	= "Time in ms";
 	
+	*/
+	
+	// SETUP MEASUREMENT 1-B - Varies Size
+	/*
+	static final int MAX_DIFFICULTY 		= 151;
+	static final int DIFFICULTY_INCREMENT 	= 1;
+	static final int TRIES_PER_DIFFICULTY   = 10;
+	static final boolean VARIES_EXPONENT  	= false;
+	static final int FIXED_PARAMETER 		= 2;
+	static String PLOT_TITLE 	= "Time vs Difficulty";
+	static String X_AXIS_LABEL 	= "Difficulty (Matrix Size)";
+	static String Y_AXIS_LABEL 	= "Time in ms";
+	*/
+	
+	static final int MAX_DIFFICULTY 		= 100000;
+	static final int DIFFICULTY_INCREMENT 	= 1000;
+	static final int TRIES_PER_DIFFICULTY   = 100;
+	static final boolean VARIES_EXPONENT  	= true;
+	static final int FIXED_PARAMETER		= 4;
+	static String PLOT_TITLE 	= "Time vs Difficulty";
+	static String X_AXIS_LABEL 	= "Difficulty (Exponent)";
+	static String Y_AXIS_LABEL 	= "Time in ms";
+	
+	// static final String URL = "http://localhost:3000";
+	static final String URL	= "http://85.26.33.41:3002";
+			
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public static void main(String[] args) throws Exception {
@@ -47,27 +73,33 @@ public class Measurement1{
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	private static DefaultTableXYDataset createDataset() throws Exception {
-		String input = Lib.stringFromFile(FILE_PATH);
 		Client client = new Client(URL);
-		
 		XYSeries networkTimeSerie 	  = new XYSeries("Network Time", false, false);
 		XYSeries computationTimeSerie = new XYSeries("Computation Time", false, false);
 		
 		for (int difficulty=1; difficulty <= MAX_DIFFICULTY; difficulty+=DIFFICULTY_INCREMENT) {
 			System.out.format("Started difficulty: %d.\n", difficulty);
-			long networkTime = 0;
+			
+			// Create input.
+			String input = VARIES_EXPONENT ? Lib.generateSquareMatrix(FIXED_PARAMETER) : Lib.generateSquareMatrix(difficulty);
+
+			long networkTime 	 = 0;
 			long computationTime = 0;
 					
-			for (int i=1; i<TRIES_PER_DIFFICULTY; i++) { // We perform many tries and take the average.
-				ComputationResult res = client.issueComputationRequest(input, difficulty);
+			// We perform several tries and take the average to limit volatility of results.
+			for (int i=0; i<TRIES_PER_DIFFICULTY; i++) {
+				ComputationResult res = VARIES_EXPONENT ? client.issueComputationRequest(input, difficulty) : client.issueComputationRequest(input, FIXED_PARAMETER);
+				
 				networkTime += res.getNetworkTime();
 				computationTime += res.getComputationTime();
+				System.out.println(res.getComputationTime());
 			}
 			
 			networkTimeSerie.add(difficulty, networkTime/TRIES_PER_DIFFICULTY);
 			computationTimeSerie.add(difficulty, computationTime/TRIES_PER_DIFFICULTY);
 		}
 		
+	
         final DefaultTableXYDataset dataset = new DefaultTableXYDataset();
 		dataset.addSeries(networkTimeSerie);
 		dataset.addSeries(computationTimeSerie);

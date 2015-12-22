@@ -1,6 +1,7 @@
 /**
  * Measurement2 acts a load generator to perform various measurements required by HW2.
  * 
+ * 
  * It measures the computation and network times as a function of the request difficulty.
  * Parameters are easily adjustable to automate the generation of the plots.
  * It display a Chart with the results.
@@ -36,14 +37,20 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 public class Measurement2 {
-	static final int REQUEST_RATE_INCREMENT = 5;
-	static final int MAX_REQUEST_RATE 		= 50;
-	static final int REQUESTS_PER_SAMPLE 	= 30;
-	static final double DIFFICULTY_MEAN 	= 500000;
-	static final double DIFFICULTY_STDEV 	= 1;
-	static final boolean GAUSSIAN_DISTRIBUTION_FOR_DIFFICULTY = true;  
 	
-	static String FILE_PATH 			= "input.txt";
+	static final String URL	= "http://85.26.33.41:3002";
+	
+	// SETUP MEASUREMENT 2.A - 1 CPU - No Cache - Fixed size of 4 for Matrix.	
+	// Avg computation time over 100 tries for difficulty 100.000 is 92 ms, so +- 100 ms.
+	// We would expect to see reponse time starting to increase at around 10 RPS.
+	static final int MATRIX_SIZE 			= 4;
+	static final int REQUEST_RATE_INCREMENT = 1;
+	static final int MAX_REQUEST_RATE 		= 20;
+	static final int REQUESTS_PER_SAMPLE 	= 10;
+	static final double DIFFICULTY_MEAN 	= 100000;
+	static final double DIFFICULTY_STDEV 	= 1; // Unused
+	static final boolean GAUSSIAN_DISTRIBUTION_FOR_DIFFICULTY = true;
+	static final boolean USE_RANDOM_SLEEP_TIME = false;
 	
 	static String PLOT1_TITLE 			= "CPUs/Network Load vs Request Rate";
 	static String PLOT1_X_AXIS_LABEL 	= "Request Rate";
@@ -70,19 +77,20 @@ public class Measurement2 {
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	private static XYDataset[] createDataset() throws Exception {
-		String input = Lib.stringFromFile(FILE_PATH);
-		Client client = new Client();
+		String input = Lib.generateSquareMatrix(MATRIX_SIZE);
+		Client client = new Client(URL);
 		
 		ExecutorService threadPool 	= Executors.newCachedThreadPool();
 		XYSeries cpusUsage     	 	= new XYSeries("CPUs Usage", false, false);
 		XYSeries networkUsage   	= new XYSeries("Network Usage", false, false);
 		XYSeries avgReponseTime 	= new XYSeries("Avg Response Time", false, false);
+		XYSeries avgComputationTime = new XYSeries("Avg Computation Time", false, false);
 		
 		for (int requestRate=1; requestRate <= MAX_REQUEST_RATE; requestRate+=REQUEST_RATE_INCREMENT) {
-			System.out.println(String.format("NEW SAMPLE FOR RATE %d (%f)", requestRate, 1.0/requestRate));
+			System.out.println(String.format("Starte new sample for request rate of %d (Sleep avg: %f)", requestRate, 1.0/requestRate));
 			// Instantiate new exponential distribution with current request rate.
 			ExponentialDistribution dist = new ExponentialDistribution(1.0/requestRate);
-			
+
 			// Create array to hold futures.
 			@SuppressWarnings("unchecked")
 			Future<ComputationResult>[] futures = (Future<ComputationResult>[]) new Future[REQUESTS_PER_SAMPLE];
@@ -97,9 +105,8 @@ public class Measurement2 {
 		        
 				// Issue request and save future value.
 				futures[i] = threadPool.submit(asyncRequest);
-				
-				// Sleep for random time.
-				long sleepTime = (long)(dist.sample()*1000*1000*1000);
+
+				long sleepTime = USE_RANDOM_SLEEP_TIME ? (long)(dist.sample()*1000*1000*1000) : (long) (1.0/requestRate*1000*1000*1000);
 				long start = System.nanoTime();
 				System.out.println("Sleep for: "+sleepTime);
 				while(start + sleepTime >= System.nanoTime());
@@ -115,6 +122,7 @@ public class Measurement2 {
 			cpusUsage.add(requestRate, res.getCpusUsage());
 			networkUsage.add(requestRate, res.getNetworkUsage());
 			avgReponseTime.add(requestRate, totalResponseTime/REQUESTS_PER_SAMPLE);
+			avgComputationTime.add(requestRate, totalResponseTime/REQUESTS_PER_SAMPLE);
 		}
 		
 		// Shutdown thread pool
@@ -157,4 +165,6 @@ public class Measurement2 {
 		else
 			return getExponentialRandomDifficulty();
 	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
 }

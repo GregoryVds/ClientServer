@@ -30,6 +30,7 @@ public class Server {
 	static int THREADS_COUNT 	 = 1;		// Default Argument
 	static int DELAY_MS     	 = 500;		// Default Argument
 	static boolean CACHE_ANSWERS = false;	// Default Argument
+	static int SOCKET_BACKLOG	 = 1000;	// Default Argument
 	
 	static HashMap<String, String> cache;
 	static CpuTimes startCpus;
@@ -43,6 +44,7 @@ public class Server {
 		THREADS_COUNT 	= (args.length > 1) ? Integer.parseInt(args[1]) : THREADS_COUNT;
 		DELAY_MS 		= (args.length > 2) ? Integer.parseInt(args[2]) : DELAY_MS;
 		CACHE_ANSWERS	= (args.length > 3) ? Boolean.parseBoolean(args[3]) : CACHE_ANSWERS;
+		SOCKET_BACKLOG	= (args.length > 4) ? Integer.parseInt(args[4]) : SOCKET_BACKLOG;
 	
 		// Initialize cache if needed.
 		if (CACHE_ANSWERS)
@@ -57,7 +59,7 @@ public class Server {
 	static void startServer() {
 		try {
 			// Initialize web server on specified port number.
-			HttpServer server = HttpServer.create(new InetSocketAddress(PORT_NUMBER), 0);
+			HttpServer server = HttpServer.create(new InetSocketAddress(PORT_NUMBER), SOCKET_BACKLOG);
 			
 			// Set request handlers and name space.
 			server.createContext("/compute", new computationHandler());
