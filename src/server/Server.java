@@ -97,7 +97,7 @@ public class Server {
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
-	static synchronized void initCpusRecording() {
+	static void initCpusRecording() {
 		System.out.println("Reinit CPUS recording");
 		monitor = new JavaSysMon();
 		startCpus = monitor.cpuTimes();
@@ -105,25 +105,25 @@ public class Server {
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
-	static synchronized float getCpusUsage() {
+	static float getCpusUsage() {
 		return monitor.cpuTimes().getCpuUsage(startCpus);
 	}
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	static synchronized String getFromCache(String key) { return cache.get(key); }
+	static String getFromCache(String key) { return cache.get(key); }
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
-	static synchronized void addToCache(String key, String result) { cache.put(key, result); }
+	static void addToCache(String key, String result) { cache.put(key, result); }
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
-	static synchronized void setCacheAnswers(boolean bool) { CACHE_ANSWERS = bool; }
+	static void setCacheAnswers(boolean bool) { CACHE_ANSWERS = bool; }
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
-	static synchronized void clearCache() { 
+	static void clearCache() { 
 		cache.clear();
 		cacheHits=0;
 		cacheMisses=0;
@@ -131,9 +131,9 @@ public class Server {
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
-	static synchronized void newCacheHit() 		{ cacheHits++; }
-	static synchronized void newCacheMiss() 	{ cacheMisses++; }
-	static synchronized float getHitRate() 		{ return ((float)cacheHits)/(cacheMisses+cacheHits); }
+	static void newCacheHit() 	{ cacheHits++; }
+	static void newCacheMiss() 	{ cacheMisses++; }
+	static float getHitRate() 	{ return ((float)cacheHits)/(cacheMisses+cacheHits); }
 		
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -193,6 +193,7 @@ public class Server {
 				
 				// Close stream
 				outputStream.close();
+				System.out.format("Done processing by %s. Exponent: %d. Input: %s\n", threadName, difficulty, input);
 			} catch (Exception e) { e.printStackTrace(); }	
        }
     }
@@ -269,9 +270,7 @@ public class Server {
 			server.stop(0);
 			System.out.println("Server stopped.");
 			initServer();
-			System.out.println("Reinit with ."+threadsCount);
 			server.setExecutor(Executors.newFixedThreadPool(threadsCount));
-			System.out.println("Reset threadsCOunt");
 			server.start();
 			System.out.println("Restarted");
 		}

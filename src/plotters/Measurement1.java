@@ -54,10 +54,10 @@ public class Measurement1{
 	static String Y_AXIS_LABEL 	= "Time in ms";
 	*/
 	
-	static final int MIN_DIFFICULTY			= 50000;
-	static final int MAX_DIFFICULTY 		= 50000;
+	static final int MIN_DIFFICULTY			= 200000;
+	static final int MAX_DIFFICULTY 		= 200000;
 	static final int DIFFICULTY_INCREMENT 	= 100;
-	static final int TRIES_PER_DIFFICULTY   = 100;
+	static final int TRIES_PER_DIFFICULTY   = 30;
 	static final boolean VARIES_EXPONENT  	= true;
 	static final int FIXED_PARAMETER		= 4;
 	static String PLOT_TITLE 	= "Time vs Difficulty";
@@ -74,7 +74,7 @@ public class Measurement1{
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	private static DefaultTableXYDataset createDataset() throws Exception {
-		Client client = new Client();
+		Client client = new Client(Constants.URL);
 		XYSeries networkTimeSerie 	  = new XYSeries("Network Time", false, false);
 		XYSeries computationTimeSerie = new XYSeries("Computation Time", false, false);
 		
@@ -98,7 +98,7 @@ public class Measurement1{
 			
 			networkTimeSerie.add(difficulty, networkTime/TRIES_PER_DIFFICULTY);
 			computationTimeSerie.add(difficulty, computationTime/TRIES_PER_DIFFICULTY);
-			System.out.format("Mean: %f", ((float)computationTime)/TRIES_PER_DIFFICULTY);
+			System.out.format("Mean: %f", ((float)networkTime)/TRIES_PER_DIFFICULTY);
 		}	
 	
         final DefaultTableXYDataset dataset = new DefaultTableXYDataset();

@@ -39,18 +39,22 @@ public class Measurement4 {
 	static String input;
 	
 	// SETUP MEASUREMENT 4.A - Response Time with multiple number of threads. 
-	static final int MAX_THREADS 				= 4;
-	static final int MIN_REQUEST_RATE 			= 10;
-	static final int MAX_REQUEST_RATE 			= 80;
-	static final int REQUEST_RATE_INCREMENT 	= 5;
+	static final int MAX_THREADS 				= 3;
+	static final double MIN_REQUEST_RATE 	    = 0.5;
+	static final double MAX_REQUEST_RATE 		= 25;
+	static final double REQUEST_RATE_INCREMENT 	= 0.5;
 	static final int MATRIX_SIZE 				= 4;
-	static final int REQUESTS_PER_SAMPLE 		= 100;
+	static final int REQUESTS_PER_SAMPLE 		= 150;
 	static final boolean USE_RANDOM_SLEEP_TIME 	= true;
 	static final boolean USE_RANDOM_DIFFICULTY 	= true;
-	static final double DIFFICULTY_MEAN 		= 50000;
+	static final double DIFFICULTY_MEAN 		= 200000;
+	static final double EXPLODE_FACTOR			= 1.0/(Constants.AVG_COMPUT_TIME_4x4_200000/1000.0);
 	static String PLOT1_TITLE 			= "Average response time";
 	static String PLOT1_X_AXIS_LABEL 	= "Mean Request Rate (exponential distribution)";
 	static String PLOT1_Y_AXIS_LABEL 	= "Response Time (ms)";
+	static String PLOT2_TITLE 			= "Average CPU load";
+	static String PLOT2_X_AXIS_LABEL 	= "Mean Request Rate (exponential distribution)";
+	static String PLOT2_Y_AXIS_LABEL 	= "Load (pc)";
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -60,7 +64,7 @@ public class Measurement4 {
 		input = Lib.generateSquareMatrix(MATRIX_SIZE);		
 		XYDataset[] datasets = createDataset();
 		final JFreeChart chartResponseTimes = ChartFactory.createXYLineChart(PLOT1_TITLE, PLOT1_X_AXIS_LABEL, PLOT1_Y_AXIS_LABEL, datasets[0]);
-		final JFreeChart chartCpusUsages 	= ChartFactory.createXYLineChart(PLOT1_TITLE, PLOT1_X_AXIS_LABEL, PLOT1_Y_AXIS_LABEL, datasets[1]);
+		final JFreeChart chartCpusUsages 	= ChartFactory.createXYLineChart(PLOT2_TITLE, PLOT2_X_AXIS_LABEL, PLOT2_Y_AXIS_LABEL, datasets[1]);
 		threadPool.shutdown();
 		
 		ChartApp.displayChart(chartResponseTimes, PLOT1_TITLE);
@@ -75,14 +79,14 @@ public class Measurement4 {
 		XYSeries[] cpuUsage		   = new XYSeries[MAX_THREADS+1];
 		
 		for (int i=1; i<=MAX_THREADS; i++) {
-			avgResponseTime[i] 	= new XYSeries(String.format("%d threads",i), false, false);
-			avgReponseModel[i] 	= new XYSeries(String.format("%d threads",i), false, false);
+			avgResponseTime[i] 	= new XYSeries(String.format("Actual Reponse Time (%d threads)",i), false, false);
+			avgReponseModel[i] 	= new XYSeries(String.format("Model Prediction (%d threads)",i), false, false);
 			cpuUsage[i]			= new XYSeries(String.format("%d threads",i), false, false);
 		}
 
 		for (int i=1; i<=MAX_THREADS; i++) {
 			client.issueSetThreadsCountRequest(i);
-			simulate(i, i*23, avgResponseTime[i], avgReponseModel[i], cpuUsage[i]);
+			simulate(i, 2*i*EXPLODE_FACTOR, avgResponseTime[i], avgReponseModel[i], cpuUsage[i]);
 		}
 	
 		// Create dataset
@@ -101,10 +105,10 @@ public class Measurement4 {
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
-	private static void simulate(int threadsCount, int maxRequestRate, XYSeries responseTime, XYSeries responseTimeModel, XYSeries cpusUsage) throws Exception {		
-		for (int requestRate=MIN_REQUEST_RATE; requestRate <= maxRequestRate; requestRate+=REQUEST_RATE_INCREMENT) {
+	private static void simulate(int threadsCount, double maxRequestRate, XYSeries responseTime, XYSeries responseTimeModel, XYSeries cpusUsage) throws Exception {		
+		for (double requestRate=MIN_REQUEST_RATE; requestRate <= maxRequestRate; requestRate+=REQUEST_RATE_INCREMENT) {
 			client.issueStartRecordingRequest();
-			System.out.println(String.format("Starte new sample for request rate of %d (Sleep avg: %f)", requestRate, 1.0/requestRate));
+			System.out.println(String.format("Start new sample for request rate of %f (Sleep avg: %f)", requestRate, 1.0/requestRate));
 			// Instantiate new exponential distribution with current request rate.
 			ExponentialDistribution randomInterRequest 	= new ExponentialDistribution(1.0/requestRate);
 			ExponentialDistribution randomDifficulty 	= new ExponentialDistribution(DIFFICULTY_MEAN);
@@ -115,8 +119,9 @@ public class Measurement4 {
 			
 			for (int i=0; i<REQUESTS_PER_SAMPLE; i++) {
 				// Prepare Callable.
+				int randomDiff = (int)randomDifficulty.sample();
 		        Callable<ComputationResult> asyncRequest = () -> {
-		            return client.issueComputationRequest(input, USE_RANDOM_DIFFICULTY ? (int)randomDifficulty.sample() : (int)DIFFICULTY_MEAN);
+		            return client.issueComputationRequest(input, USE_RANDOM_DIFFICULTY ? (int)randomDiff : (int)DIFFICULTY_MEAN);
 		        };
 		        
 				// Issue request and save future value.
@@ -124,7 +129,7 @@ public class Measurement4 {
 
 				long sleepTime = USE_RANDOM_SLEEP_TIME ? (long)(randomInterRequest.sample()*1000*1000*1000) : (long) (1.0/requestRate*1000*1000*1000);
 				long start = System.nanoTime();
-				System.out.println("Sleep for: "+sleepTime);
+				System.out.format("Sent for difficulty %d. Sleep for %d.\n", randomDiff, sleepTime);
 				while(start + sleepTime >= System.nanoTime());
 			}
 			
@@ -140,8 +145,7 @@ public class Measurement4 {
 			responseTime.add(requestRate, totalResponseTime/REQUESTS_PER_SAMPLE);
 			cpusUsage.add(requestRate, res.getCpusUsage());
 			
-			System.out.format("Model for rate %d and threads %d: %f\n", requestRate, threadsCount, model(requestRate, threadsCount));
-			System.out.format("Add: (%d,%f)", requestRate, model(requestRate, threadsCount)); 
+			System.out.format("Model for rate %f and threads %d: %f\n", requestRate, threadsCount, model(requestRate, threadsCount));
 			responseTimeModel.add(requestRate, model(requestRate, threadsCount));
 		}
 	}
@@ -166,10 +170,10 @@ public class Measurement4 {
     
     ///////////////////////////////////////////////////////////////////////////////////////////////
     
-	public static double model(int requestRate, int threadsCount) {
+	public static double model(double requestRate, int threadsCount) {
 		int m 	  	  = threadsCount;
 		double lambda = requestRate; 
-		double mu 	  = 1/(Constants.AVG_COMPUT_TIME_4x4_50000/1000.0);
+		double mu 	  = 1/(Constants.AVG_COMPUT_TIME_4x4_200000/1000.0);
 		double a	  = lambda/mu;
 		double xi	  = a/m;
 		
@@ -184,7 +188,7 @@ public class Measurement4 {
 		double esp       = (1/lambda)*sum; 
 		
 		if (requestRate > mu*threadsCount) esp = 3; // Model becomes instable.
-		double estimate  = Constants.NETWORK_LATENCY+esp*1000;
+		double estimate  = Constants.NETWORK_LATENCY2+esp*1000;
 		return estimate;
 	}
 
