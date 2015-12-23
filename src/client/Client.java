@@ -141,8 +141,8 @@ public class Client {
 		if (code!=200) 
 			throw new Exception("Did not set threads count.");
 		
-		Thread.sleep(1000);
 		con.disconnect();
+		Thread.sleep(1000);
 	}	
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////

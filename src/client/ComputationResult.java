@@ -1,6 +1,5 @@
 /**
- * ComputationResult is a simple class that encapsulate the result of a computation performed by
- * the server.
+ * ComputationResult is a simple class that  r.
  * 
  * It contains the following information:
  * 	- Computation input (the square matrix).

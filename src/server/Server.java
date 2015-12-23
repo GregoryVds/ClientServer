@@ -61,16 +61,8 @@ public class Server {
 	
 	static void startServer() {
 		try {
-			// Initialize web server on specified port number.
-			server = HttpServer.create(new InetSocketAddress(PORT_NUMBER), SOCKET_BACKLOG);
-			
-			// Set request handlers and name space.
-			server.createContext("/compute", 			new computationHandler());
-			server.createContext("/start_recording", 	new startRecordingHandler());
-			server.createContext("/stop_recording", 	new stopRecordingHandler());
-			server.createContext("/enable_caching", 	new enableCachingHandler());
-			server.createContext("/disable_caching", 	new disableCachingHandler());
-			server.createContext("/set_threads_count", 	new setThreadsCountHandler());
+			// Init server
+			initServer();
 			
 			// Use a thread pools for multithreading.
 			server.setExecutor(Executors.newFixedThreadPool(THREADS_COUNT)); 
@@ -86,6 +78,21 @@ public class Server {
 			System.out.println("Failed to start web server");
 			e.printStackTrace();
 		}
+	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	static void initServer() throws IOException {
+		// Initialize web server on specified port number.
+		server = HttpServer.create(new InetSocketAddress(PORT_NUMBER), SOCKET_BACKLOG);
+		
+		// Set request handlers and name space.
+		server.createContext("/compute", 			new computationHandler());
+		server.createContext("/start_recording", 	new startRecordingHandler());
+		server.createContext("/stop_recording", 	new stopRecordingHandler());
+		server.createContext("/enable_caching", 	new enableCachingHandler());
+		server.createContext("/disable_caching", 	new disableCachingHandler());
+		server.createContext("/set_threads_count", 	new setThreadsCountHandler());
 	}
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
@@ -251,7 +258,7 @@ public class Server {
 			// Read request difficulty and data.
 			BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
 			int threadsCount = Integer.parseInt(reader.readLine());
-			System.out.format("Set threads count to %d\n.", threadsCount);
+			System.out.format("Set threads count to %d\n", threadsCount);
 			reader.close();
 			
 			// Respond
@@ -260,8 +267,13 @@ public class Server {
 			
 			// Restart server
 			server.stop(0);
+			System.out.println("Server stopped.");
+			initServer();
+			System.out.println("Reinit with ."+threadsCount);
 			server.setExecutor(Executors.newFixedThreadPool(threadsCount));
+			System.out.println("Reset threadsCOunt");
 			server.start();
+			System.out.println("Restarted");
 		}
 	}
 	
