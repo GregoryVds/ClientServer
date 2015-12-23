@@ -86,6 +86,7 @@ public class Measurement4 {
 
 		for (int i=1; i<=MAX_THREADS; i++) {
 			client.issueSetThreadsCountRequest(i);
+			Thread.sleep(1000);
 			simulate(i, 2*i*EXPLODE_FACTOR, avgResponseTime[i], avgReponseModel[i], cpuUsage[i]);
 		}
 	
@@ -108,6 +109,8 @@ public class Measurement4 {
 	private static void simulate(int threadsCount, double maxRequestRate, XYSeries responseTime, XYSeries responseTimeModel, XYSeries cpusUsage) throws Exception {		
 		for (double requestRate=MIN_REQUEST_RATE; requestRate <= maxRequestRate; requestRate+=REQUEST_RATE_INCREMENT) {
 			client.issueStartRecordingRequest();
+			Thread.sleep(1000);
+			
 			System.out.println(String.format("Start new sample for request rate of %f (Sleep avg: %f)", requestRate, 1.0/requestRate));
 			// Instantiate new exponential distribution with current request rate.
 			ExponentialDistribution randomInterRequest 	= new ExponentialDistribution(1.0/requestRate);
@@ -140,6 +143,7 @@ public class Measurement4 {
 			
 			// Record results.
 			RecordingResult res = client.issueStopRecordingRequest();
+			Thread.sleep(1000);
 			
 			// Record results.
 			responseTime.add(requestRate, totalResponseTime/REQUESTS_PER_SAMPLE);
