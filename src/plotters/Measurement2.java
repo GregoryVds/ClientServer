@@ -37,48 +37,29 @@ import org.apache.commons.math3.distribution.ExponentialDistribution;
 
 public class Measurement2 {		
 	// SETUP MEASUREMENT 2.A - Non random, verification of hypothesis - 1 CPU - No Cache 	
-	
 	static final int MIN_REQUEST_RATE 			= 1;
-	static final int MAX_REQUEST_RATE 			= 50;
+	static final int MAX_REQUEST_RATE 			= 40;
 	static final int REQUEST_RATE_INCREMENT 	= 1;
 	static final int MATRIX_SIZE 				= 4;
-	static final int REQUESTS_PER_SAMPLE 		= 150;
+	static final int REQUESTS_PER_SAMPLE 		= 200;
 	static final boolean USE_RANDOM_SLEEP_TIME 	= false;
 	static final boolean USE_RANDOM_DIFFICULTY 	= false;
-	static final double DIFFICULTY_MEAN 		= 100000;
+	static final double DIFFICULTY_MEAN 		= 50000;
 	static String PLOT1_TITLE 			= "CPUs Load vs Request Rate";
 	static String PLOT1_X_AXIS_LABEL 	= "Request Rate";
 	static String PLOT1_Y_AXIS_LABEL 	= "Load (%)";
 	static String PLOT2_TITLE 			= "Response Time vs Request Rate";
 	static String PLOT2_X_AXIS_LABEL 	= "Request Rate";
 	static String PLOT2_Y_AXIS_LABEL 	= "Response Time (ms)";
-	
+	static final boolean PLOT_MODEL		= true; 
 	
 	// SETUP MEASUREMENT 2.B - Plots for Measurement 2 - 1 CPU - No Cache
 	/*
 	static final int MIN_REQUEST_RATE 			= 1;
-	static final int MAX_REQUEST_RATE 			= 50;
+	static final int MAX_REQUEST_RATE 			= 40;
 	static final int REQUEST_RATE_INCREMENT 	= 1;
 	static final int MATRIX_SIZE 				= 4;
-	static final int REQUESTS_PER_SAMPLE 		= 150;
-	static final boolean USE_RANDOM_SLEEP_TIME 	= true;
-	static final boolean USE_RANDOM_DIFFICULTY 	= true;
-	static final double DIFFICULTY_MEAN 		= 100000;
-	static String PLOT1_TITLE 			= "CPUs Load vs Request Rate";
-	static String PLOT1_X_AXIS_LABEL 	= "Mean Request Rate (exponential distribution)";
-	static String PLOT1_Y_AXIS_LABEL 	= "Load (%)";
-	static String PLOT2_TITLE 			= "Response Time vs Request Rate";
-	static String PLOT2_X_AXIS_LABEL 	= "Mean Request Rate (exponential distribution)";
-	static String PLOT2_Y_AXIS_LABEL 	= "Response Time (ms)";
-	*/	
-	
-	// SETUP MEASUREMENT 2.C - Compare with model - 1 CPU - No Cache
-	/*
-	static final int MIN_REQUEST_RATE 			= 1;
-	static final int MAX_REQUEST_RATE 			= 25;
-	static final int REQUEST_RATE_INCREMENT 	= 1;
-	static final int MATRIX_SIZE 				= 4;
-	static final int REQUESTS_PER_SAMPLE 		= 150;
+	static final int REQUESTS_PER_SAMPLE 		= 200;
 	static final boolean USE_RANDOM_SLEEP_TIME 	= true;
 	static final boolean USE_RANDOM_DIFFICULTY 	= true;
 	static final double DIFFICULTY_MEAN 		= 50000;
@@ -87,9 +68,10 @@ public class Measurement2 {
 	static String PLOT1_Y_AXIS_LABEL 	= "Load (%)";
 	static String PLOT2_TITLE 			= "Response Time vs Request Rate";
 	static String PLOT2_X_AXIS_LABEL 	= "Mean Request Rate (exponential distribution)";
-	static String PLOT2_Y_AXIS_LABEL 	= "Response Time (ms)"; */
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
+	static String PLOT2_Y_AXIS_LABEL 	= "Response Time (ms)";
+	static final boolean PLOT_MODEL		= true;
+	*/
+//////////////////////////////////////////////////////////////////////////
 	
 	public static void main(String[] args) throws Exception {
 		XYDataset[] datasets = createDataset();
@@ -125,9 +107,9 @@ public class Measurement2 {
 			client.issueStartRecordingRequest();
 			for (int i=0; i<REQUESTS_PER_SAMPLE; i++) {
 				// Prepare Callable.
-				int randomDiff = (int)randomDifficulty.sample();
+				int diff = USE_RANDOM_DIFFICULTY ? (int)randomDifficulty.sample() : (int)DIFFICULTY_MEAN;
 		        Callable<ComputationResult> asyncRequest = () -> {
-		            return client.issueComputationRequest(input, USE_RANDOM_DIFFICULTY ? randomDiff : (int)DIFFICULTY_MEAN);
+		            return client.issueComputationRequest(input, diff);
 		        };
 		        
 				// Issue request and save future value.
@@ -135,7 +117,7 @@ public class Measurement2 {
 
 				long sleepTime = USE_RANDOM_SLEEP_TIME ? (long)(randomInterRequest.sample()*1000*1000*1000) : (long) (1.0/requestRate*1000*1000*1000);
 				long start = System.nanoTime();
-				System.out.format("Sent for difficulty %d. Sleep for %d.\n", randomDiff, sleepTime);
+				System.out.format("Sent for difficulty %d. Sleep for %d.\n", diff, sleepTime);
 				while(start + sleepTime >= System.nanoTime());
 			}
 			
@@ -148,7 +130,7 @@ public class Measurement2 {
 			RecordingResult res = client.issueStopRecordingRequest();
 			cpusUsage.add(requestRate, res.getCpusUsage());
 			avgReponseTime.add(requestRate, totalResponseTime/REQUESTS_PER_SAMPLE);
-			if (requestRate < 23) // TODO
+			if (PLOT_MODEL && requestRate<23)
 				modelReponseTime.add(requestRate, model(requestRate));
 		}
 		

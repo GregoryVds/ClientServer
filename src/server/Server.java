@@ -176,8 +176,8 @@ public class Server {
 				reader.close();
 				
 				// Print thread debug information.
-				String threadName = Thread.currentThread().getName();
-				System.out.format("Request processed by %s. Exponent: %d. Input: %s\n", threadName, difficulty, input);
+				// String threadName = Thread.currentThread().getName();
+				// System.out.format("Request processed by %s. Exponent: %d. Input: %s\n", threadName, difficulty, input);
 				
 				// Compute
 				String computationResult = compute(input, difficulty);
@@ -193,7 +193,7 @@ public class Server {
 				
 				// Close stream
 				outputStream.close();
-				System.out.format("Done processing by %s. Exponent: %d. Input: %s\n", threadName, difficulty, input);
+				// System.out.format("Done processing by %s. Exponent: %d. Input: %s\n", threadName, difficulty, input);
 			} catch (Exception e) { e.printStackTrace(); }	
        }
     }
